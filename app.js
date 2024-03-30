@@ -365,4 +365,4 @@ async function updateTotalBurnedAmount() {
   }
 }
 setInterval(detectVoidBurnEvent, 60000);
-setInterval(detectUniswapTransactions, 60000);
+setInterval(detectUniswapTransactions, 12000);
