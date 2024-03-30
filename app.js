@@ -96,10 +96,22 @@ async function sendMessageFromQueue() {
   }
 }
 
-// Call this function whenever you want to send a message
-function sendAnimationMessage(animation, options) {
+async function sendAnimationMessage(animation, options, pinMessage = false) {
   addToMessageQueue({ animation, options });
   sendMessageFromQueue();
+
+  if (pinMessage) {
+    try {
+      // Wait for a short duration to ensure the message is sent before pinning
+      await sleep(1000);
+      // Pin the message in the group
+      await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
+        disable_notification: true 
+      });
+    } catch (error) {
+      console.error("Error pinning message:", error);
+    }
+  }
 }
 
 async function detectUniswapTransactions() {
@@ -295,7 +307,7 @@ async function detectUniswapTransactions() {
             caption: message,
             parse_mode: "HTML",
           };
-          sendAnimationMessage(voidAnimation, voidanimationMessageOptions);
+          sendAnimationMessage(voidAnimation, voidanimationMessageOptions, false);
 
 
            processedTransactions.add(transaction.hash);
@@ -363,7 +375,7 @@ async function detectVoidBurnEvent() {
         caption: burnMessage,
         parse_mode: "HTML",
       };
-      sendAnimationMessage(burnAnimation, burnanimationMessageOptions);
+      sendAnimationMessage(burnAnimation, burnanimationMessageOptions, true);
 
       saveProcessedTransactions();
     });
