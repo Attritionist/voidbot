@@ -17,6 +17,20 @@ const burnAnimation = "https://voidonbase.com/burn.gif";
 const voidAnimation = "https://voidonbase.com/void.gif";
 const fs = require("fs");
 const lockFilePath = "bot.lock";
+
+function checkLockFile() {
+  // Check if a lock file exists
+  if (fs.existsSync(lockFilePath)) {
+    console.log("Another instance of the bot is already running.");
+    setTimeout(checkLockFile, 60000);
+  } else {
+    // Create a lock file
+    fs.writeFileSync(lockFilePath, "");
+    // Remove the lock file when the process exits
+    process.on("exit", () => {
+      fs.unlinkSync(lockFilePath);
+    });
+
 const processedTransactionsFilePath = "processed_transactions.json";
 let processedTransactions = new Set();
 if (fs.existsSync(processedTransactionsFilePath)) {
@@ -36,17 +50,7 @@ if (fs.existsSync(processedTransactionsFilePath)) {
     }
   }
 }
-if (fs.existsSync(lockFilePath)) {
-  console.log("Another instance of the bot is already running.");
-  process.exit(1); // Exit the current instance
-} else {
-  // Create a lock file
-  fs.writeFileSync(lockFilePath, "");
-}
-// Remove the lock file when the process exits
-process.on("exit", () => {
-  fs.unlinkSync(lockFilePath);
-});
+
 // Function to save processed transactions to file
 function saveProcessedTransactions() {
   try {
@@ -366,3 +370,6 @@ async function updateTotalBurnedAmount() {
 }
 setInterval(detectVoidBurnEvent, 60000);
 setInterval(detectUniswapTransactions, 12000);
+}
+}
+checkLockFile();
