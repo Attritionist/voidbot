@@ -7,12 +7,13 @@ const TELEGRAM_CHAT_ID = process.env["TELEGRAM_CHAT_ID"];
 const TELEGRAM_BOT_TOKEN = process.env["TELEGRAM_BOT_TOKEN"];
 const ETHERSCAN_API_KEY = process.env["ETHERSCAN_API_KEY"];
 const TOKEN_CONTRACT = process.env["TOKEN_CONTRACT"];
+const POOL_CONTRACT = process.env["POOL_CONTRACT"];
+
 
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18; // Replace with the actual decimals value
 const initialSupply = 100000000;
-const uniswapPairAddress = "0xc53a5245069ec40a7750c652454a4310aed2bef1"; // Uniswap V3 LP pair address
 const burnAnimation = "https://voidonbase.com/burn.gif";
 const voidAnimation = "https://voidonbase.com/void.gif";
 const fs = require("fs");
@@ -97,7 +98,7 @@ async function detectUniswapTransactions() {
     // Use the latest ETH-USD price fetched by getEthUsdPrice function
     const ethUsdPrice = currentEthUsdPrice;
 
-    const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=${uniswapPairAddress}&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
+    const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=${POOL_CONTRACT}&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
     const response = await axios.get(apiUrl);
 
     if (response.data.status !== "1") {
@@ -110,7 +111,7 @@ async function detectUniswapTransactions() {
     for (const transaction of newTransactions) {
       const amountTransferred = Number(transaction.value) / 10 ** tokenDecimals;
       const isBuy =
-        transaction.from.toLowerCase() === uniswapPairAddress.toLowerCase();
+        transaction.from.toLowerCase() === POOL_CONTRACT.toLowerCase();
         const AddressOf = isBuy ? transaction.to : transaction.from;
         const addressLink = `https://debank.com/profile/${AddressOf}`;
       const txHashLink = `https://basescan.org/tx/${transaction.hash}`;
