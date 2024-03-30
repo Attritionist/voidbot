@@ -17,21 +17,6 @@ const initialSupply = 100000000;
 const burnAnimation = "https://voidonbase.com/burn.gif";
 const voidAnimation = "https://voidonbase.com/void.gif";
 const fs = require("fs");
-const lockFilePath = "bot.lock";
-
-function checkLockFile() {
-  // Check if a lock file exists
-  if (fs.existsSync(lockFilePath)) {
-    console.log("Another instance of the bot is already running.");
-    setTimeout(checkLockFile, 60000);
-  } else {
-    // Create a lock file
-    fs.writeFileSync(lockFilePath, "");
-    // Remove the lock file when the process exits
-    process.on("exit", () => {
-      fs.unlinkSync(lockFilePath);
-    });
-
 const processedTransactionsFilePath = "processed_transactions.json";
 let processedTransactions = new Set();
 if (fs.existsSync(processedTransactionsFilePath)) {
@@ -83,7 +68,7 @@ setInterval(async () => {
     // Update the global variable with the latest ETH-USD price
     currentEthUsdPrice = ethUsdPrice;
   }
-}, 180000);
+}, 12000);
 
 let currentEthUsdPrice = null;
 
@@ -369,8 +354,5 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-setInterval(detectVoidBurnEvent, 90000);
-setInterval(detectUniswapTransactions, 30000);
-}
-}
-checkLockFile();
+setInterval(detectVoidBurnEvent, 60000);
+setInterval(detectUniswapTransactions, 12000);
