@@ -2,17 +2,14 @@ const axios = require("axios");
 const TelegramBot = require("node-telegram-bot-api");
 require("dotenv").config();
 
-// replace the value below with the Telegram token you receive from @BotFather
 const TELEGRAM_CHAT_ID = process.env["TELEGRAM_CHAT_ID"];
 const TELEGRAM_BOT_TOKEN = process.env["TELEGRAM_BOT_TOKEN"];
 const ETHERSCAN_API_KEY = process.env["ETHERSCAN_API_KEY"];
 const TOKEN_CONTRACT = process.env["TOKEN_CONTRACT"];
 const POOL_CONTRACT = process.env["POOL_CONTRACT"];
 
-
-
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
-const tokenDecimals = 18; // Replace with the actual decimals value
+const tokenDecimals = 18;
 const initialSupply = 100000000;
 const burnAnimation = "https://voidonbase.com/burn.gif";
 const voidAnimation = "https://voidonbase.com/void.gif";
@@ -23,10 +20,8 @@ if (fs.existsSync(processedTransactionsFilePath)) {
   const data = fs.readFileSync(processedTransactionsFilePath, "utf-8");
   if (data.trim()) {
     try {
-      // Parse the JSON data into an array
       const parsedData = JSON.parse(data);
       if (Array.isArray(parsedData)) {
-        // Initialize processedTransactions as a set with the parsed array data
         processedTransactions = new Set(parsedData);
       } else {
         throw new Error("Data read from file is not in the expected format");
@@ -37,10 +32,8 @@ if (fs.existsSync(processedTransactionsFilePath)) {
   }
 }
 
-// Function to save processed transactions to file
 function saveProcessedTransactions() {
   try {
-    // Convert the set to an array before saving to JSON
     const data = JSON.stringify(Array.from(processedTransactions));
     fs.writeFileSync(processedTransactionsFilePath, data, "utf-8");
   } catch (error) {
@@ -51,7 +44,7 @@ function saveProcessedTransactions() {
 async function getEthUsdPrice() {
   try {
     const response = await axios.get(
-      "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",
+      "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd"
     );
     const ethPrice = response.data.ethereum.usd;
     return ethPrice;
@@ -61,26 +54,56 @@ async function getEthUsdPrice() {
   }
 }
 
-// Add a setInterval call to getEthUsdPrice function with a 120-second interval
 setInterval(async () => {
   const ethUsdPrice = await getEthUsdPrice();
   if (ethUsdPrice !== null) {
-    // Update the global variable with the latest ETH-USD price
     currentEthUsdPrice = ethUsdPrice;
   }
-}, 12000);
+}, 20000);
 
 let currentEthUsdPrice = null;
+const messageQueue = [];
+let isSendingMessage = false;
+
+function addToMessageQueue(message) {
+  messageQueue.push(message);
+}
+
+async function sendMessageFromQueue() {
+  if (messageQueue.length > 0 && !isSendingMessage) {
+    isSendingMessage = true;
+    const message = messageQueue.shift();
+    try {
+      // Send the message
+      await bot.sendAnimation(
+        TELEGRAM_CHAT_ID,
+        message.animation,
+        message.options
+      );
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
+    // Wait for 5 seconds before sending the next message
+    setTimeout(() => {
+      isSendingMessage = false;
+      sendMessageFromQueue(); // Send the next message in the queue
+    }, 2500);
+  }
+}
+
+// Call this function whenever you want to send a message
+function sendAnimationMessage(animation, options) {
+  addToMessageQueue({ animation, options });
+  sendMessageFromQueue();
+}
 
 async function detectUniswapTransactions() {
   try {
-    // Check if there's a valid ETH-USD price available
     if (currentEthUsdPrice === null) {
       console.log("Waiting for ETH-USD price data...");
       return;
     }
 
-    // Use the latest ETH-USD price fetched by getEthUsdPrice function
     const ethUsdPrice = currentEthUsdPrice;
 
     const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=${POOL_CONTRACT}&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
@@ -91,28 +114,26 @@ async function detectUniswapTransactions() {
     }
 
     const newTransactions = response.data.result.filter(
-      (transaction) => !processedTransactions.has(transaction.hash),
+      (transaction) => !processedTransactions.has(transaction.hash)
     );
     for (const transaction of newTransactions) {
-      const amountTransferred = Number(transaction.value) / 10 ** tokenDecimals;
+      const amountTransferred =
+        Number(transaction.value) / 10 ** tokenDecimals;
       const isBuy =
         transaction.from.toLowerCase() === POOL_CONTRACT.toLowerCase();
-        const AddressOf = isBuy ? transaction.to : transaction.from;
-        const addressLink = `https://debank.com/profile/${AddressOf}`;
+      const AddressOf = isBuy ? transaction.to : transaction.from;
+      const addressLink = `https://debank.com/profile/${AddressOf}`;
       const txHashLink = `https://basescan.org/tx/${transaction.hash}`;
       const chartLink =
         "https://dexscreener.com/base/0xBf949F74Eb6Ae999f35e4706A236f8792b88Cb73";
 
-      // Fetch ETH amount for the transaction
       const txDetailsUrl = `https://api.basescan.org/api?module=account&action=txlistinternal&txhash=${transaction.hash}&apikey=${ETHERSCAN_API_KEY}`;
 
       const txDetailsResponse = await axios.get(txDetailsUrl);
       if (txDetailsResponse.data.status === "1") {
-        const ethAmount =
-          txDetailsResponse.data.result
-            .filter((result) => result.isError === "0")
-            .reduce((sum, result) => sum + Number(result.value), 0) /
-          10 ** 18;
+        const ethAmount = txDetailsResponse.data.result
+          .filter((result) => result.isError === "0")
+          .reduce((sum, result) => sum + Number(result.value), 0) / 10 ** 18;
         const VOID_RANKS = {
             "VOID Peasant": 1,
             "VOID Initiate": 10000,
@@ -220,7 +241,8 @@ async function detectUniswapTransactions() {
         const ethValue = ethAmount.toFixed(6);
         const totalSupply = 100000000;
         const dollarValue = (ethAmount * ethUsdPrice).toFixed(2);
-        const voidUsdPrice = (ethAmount / amountTransferred) * ethUsdPrice;
+        const voidUsdPrice =
+          (ethAmount / amountTransferred) * ethUsdPrice;
         const voidAmount = isBuy
           ? amountTransferred.toFixed(2)
           : amountTransferred.toFixed(2);
@@ -232,12 +254,10 @@ async function detectUniswapTransactions() {
         }
         const marketCap = voidUsdPrice * totalSupply;
 
-        // Fetch VOID token balance for buyer/seller
-        const balanceDetailsUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${TOKEN_CONTRACT}&address=${AddressOf}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
+         const balanceDetailsUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${TOKEN_CONTRACT}&address=${AddressOf}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
         const balanceDetailResponse = await axios.get(balanceDetailsUrl);
         if (balanceDetailResponse.data.status === "1") {
           const voidBalance = balanceDetailResponse.data.result / 10 ** 18;
-          // Determine the rank based on VOID token balance
           for (const [rank, threshold] of Object.entries(VOID_RANKS)) {
             if (voidBalance >= threshold) {
               voidRank = rank;
@@ -250,7 +270,7 @@ async function detectUniswapTransactions() {
             isBuy ? "Spent" : "Received"
           }: ${ethValue} ${isBuy ? "WETH" : "ETH"} ($${dollarValue})\n💼 ${
             isBuy
-              ? `Bought <a href="${addressLink}">${voidAmount} VOID</a>`
+              ? `Bought ${voidAmount} VOID</a>`
               : `Sold ${amountTransferred.toFixed(
                   3,
                 )} VOID ($${voidDollarValue})`
@@ -262,17 +282,14 @@ async function detectUniswapTransactions() {
             caption: message,
             parse_mode: "HTML",
           };
+          sendAnimationMessage(voidAnimation, voidanimationMessageOptions);
 
-          bot.sendAnimation(
-            TELEGRAM_CHAT_ID,
-            voidAnimation,
-            voidanimationMessageOptions,
-          );
+
           processedTransactions.add(transaction.hash);
         } else {
           console.error(
             "Failed to retrieve transaction details:",
-            txDetailsResponse.data.message,
+            txDetailsResponse.data.message
           );
         }
 
@@ -293,18 +310,15 @@ async function detectVoidBurnEvent() {
       throw new Error("Failed to retrieve token transactions");
     }
     await updateTotalBurnedAmount();
-    // Loop through transactions
     response.data.result.forEach((transaction) => {
-      // Check if transaction is a token burn, not already processed, and not in the set of processed transactions
       if (
         transaction.to.toLowerCase() ===
           "0x0000000000000000000000000000000000000000" &&
         !processedTransactions.has(transaction.hash)
       ) {
-        // Add the transaction hash to the set of processed transactions
         processedTransactions.add(transaction.hash);
-        // Convert the token amount to a human-readable format
-        const amountBurned = Number(transaction.value) / 10 ** tokenDecimals;
+        const amountBurned =
+          Number(transaction.value) / 10 ** tokenDecimals;
         const txHash = transaction.hash;
         const txHashLink = `https://basescan.org/tx/${txHash}`;
         const chartLink =
@@ -312,22 +326,18 @@ async function detectVoidBurnEvent() {
         const percentBurned =
           ((initialSupply - totalBurnedAmount) / initialSupply) * 100;
         totalBurnedAmount += amountBurned;
-        // Format the burn message content
         const burnMessage = `VOID Burned!\n\n💀💀💀💀💀\n🔥 Burned: ${amountBurned.toFixed(
-          3,
+          3
         )} VOID\nPercent Burned: ${percentBurned.toFixed(
-          2,
+          2
         )}%\n🔎 <a href="${chartLink}">Chart</a> | <a href="${txHashLink}">TX Hash</a>`;
 
         const burnanimationMessageOptions = {
           caption: burnMessage,
           parse_mode: "HTML",
         };
-        bot.sendAnimation(
-          TELEGRAM_CHAT_ID,
-          burnAnimation,
-          burnanimationMessageOptions,
-        );
+        sendAnimationMessage(burnAnimation, burnanimationMessageOptions);
+
         saveProcessedTransactions();
       }
     });
@@ -336,7 +346,7 @@ async function detectVoidBurnEvent() {
   }
 }
 
-let totalBurnedAmount = 0; // Initialize totalBurnedAmount to 0
+let totalBurnedAmount = 0;
 
 async function updateTotalBurnedAmount() {
   try {
@@ -344,15 +354,12 @@ async function updateTotalBurnedAmount() {
     const response = await axios.get(apiUrl);
 
     if (response.data.status === "1") {
-      // Convert the balance to the appropriate format (considering token decimals)
       const balance = Number(response.data.result) / 10 ** tokenDecimals;
-
-      // Subtract the current balance from the initial supply to get the burned amount
       totalBurnedAmount = initialSupply - balance;
     }
   } catch (error) {
     console.error("Error updating total burned amount:", error);
   }
 }
-setInterval(detectVoidBurnEvent, 60000);
-setInterval(detectUniswapTransactions, 12000);
+setInterval(detectVoidBurnEvent, 20000);
+setInterval(detectUniswapTransactions, 10000);
