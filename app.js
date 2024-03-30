@@ -8,9 +8,11 @@ const ETHERSCAN_API_KEY = process.env["ETHERSCAN_API_KEY"];
 const TOKEN_CONTRACT = process.env["TOKEN_CONTRACT"];
 const POOL_CONTRACT = process.env["POOL_CONTRACT"];
 const MAX_CONSECUTIVE_NO_TRANSACTIONS = 5;
-const SLEEP_DURATION = 30000;
+const VOID_SLEEP_DURATION = 10000;
+const BURN_SLEEP_DURATION = 30000;
 
 let consecutiveNoTransactions = 0;
+let consecutiveNoBurn = 0;
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
 const initialSupply = 100000000;
@@ -103,8 +105,8 @@ function sendAnimationMessage(animation, options) {
 async function detectUniswapTransactions() {
   try {
     if (consecutiveNoTransactions >= MAX_CONSECUTIVE_NO_TRANSACTIONS) {
-    console.log(`No new transactions detected. Sleeping for ${SLEEP_DURATION / 1000} seconds...`);
-    await sleep(SLEEP_DURATION);
+    console.log(`No new transactions detected. Sleeping for ${VOID_SLEEP_DURATION / 1000} seconds...`);
+    await sleep(VOID_SLEEP_DURATION);
     consecutiveNoTransactions = 0; // Reset the counter after waking up
   }
     if (currentEthUsdPrice === null) {
@@ -318,10 +320,10 @@ async function detectVoidBurnEvent() {
         if (response.data.status !== "1") {
           throw new Error("Failed to retrieve token transactions");
         }
-    if (consecutiveNoTransactions >= MAX_CONSECUTIVE_NO_TRANSACTIONS) {
-      console.log(`No new burn events detected. Sleeping for ${SLEEP_DURATION / 1000} seconds...`);
-      await sleep(SLEEP_DURATION);
-      consecutiveNoTransactions = 0; // Reset the counter after waking up
+    if (consecutiveNoBurn >= MAX_CONSECUTIVE_NO_TRANSACTIONS) {
+      console.log(`No new burn events detected. Sleeping for ${BURN_SLEEP_DURATION / 1000} seconds...`);
+      await sleep(BURN_SLEEP_DURATION);
+      consecutiveNoBurn = 0;
     }
 
     await updateTotalBurnedAmount();
@@ -335,10 +337,10 @@ async function detectVoidBurnEvent() {
 
     if (newBurnEvents.length === 0) {
       console.log("No new burn events detected.");
-      consecutiveNoTransactions++;
+      consecutiveNoBurn++;
       return;
     }
-    consecutiveNoTransactions = 0; 
+    consecutiveNoBurn = 0; 
 
     newBurnEvents.forEach((transaction) => {
       processedTransactions.add(transaction.hash);
@@ -387,5 +389,5 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-setInterval(detectVoidBurnEvent, 20000);
-setInterval(detectUniswapTransactions, 10000);
+setInterval(detectVoidBurnEvent, 15000);
+setInterval(detectUniswapTransactions, 5000);
