@@ -270,14 +270,10 @@ async function detectUniswapTransactions() {
             isBuy ? "Spent" : "Received"
           }: ${ethValue} ${isBuy ? "WETH" : "ETH"} ($${dollarValue})\n💼 ${
             isBuy
-              ? `Bought ${voidAmount} VOID</a>`
-              : `Sold ${amountTransferred.toFixed(
-                  3,
-                )} VOID ($${voidDollarValue})`
-          }\n🔎 <a href="${addressLink}">${
-            isBuy ? "Buyer" : "Seller"
-          }</a>\n<a href="${chartLink}">📈 Chart</a>\n<a href="${txHashLink}">TX Hash</a>\n💰 Market Cap: $${marketCap.toLocaleString()}\n🟣 Remaining VOID Balance: ${voidBalance}\n🛡️ VOID Rank: ${voidRank}`;
-
+              ? `Bought ${voidAmount} VOID (<a href="${addressLink}">View Address</a>)`
+              : `Sold ${amountTransferred.toFixed(3)} VOID (<a href="${addressLink}">View Address</a>)`
+          }\n<a href="${chartLink}">📈 Chart</a>\n<a href="${txHashLink}">TX Hash</a>\n💰 Market Cap: $${marketCap.toLocaleString()}\n🟣 Remaining VOID Balance: ${voidBalance}\n🛡️ VOID Rank: ${voidRank}`;
+          
           const voidanimationMessageOptions = {
             caption: message,
             parse_mode: "HTML",
