@@ -83,7 +83,7 @@ setInterval(async () => {
     // Update the global variable with the latest ETH-USD price
     currentEthUsdPrice = ethUsdPrice;
   }
-}, 12000);
+}, 180000);
 
 let currentEthUsdPrice = null;
 
@@ -369,8 +369,8 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-setInterval(detectVoidBurnEvent, 60000);
-setInterval(detectUniswapTransactions, 12000);
+setInterval(detectVoidBurnEvent, 90000);
+setInterval(detectUniswapTransactions, 30000);
 }
 }
 checkLockFile();
