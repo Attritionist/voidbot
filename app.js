@@ -16,6 +16,7 @@ const uniswapPairAddress = "0xc53a5245069ec40a7750c652454a4310aed2bef1"; // Unis
 const burnAnimation = "https://voidonbase.com/burn.gif";
 const voidAnimation = "https://voidonbase.com/void.gif";
 const fs = require("fs");
+const lockFilePath = "bot.lock";
 const processedTransactionsFilePath = "processed_transactions.json";
 let processedTransactions = new Set();
 if (fs.existsSync(processedTransactionsFilePath)) {
@@ -35,7 +36,17 @@ if (fs.existsSync(processedTransactionsFilePath)) {
     }
   }
 }
-
+if (fs.existsSync(lockFilePath)) {
+  console.log("Another instance of the bot is already running.");
+  process.exit(1); // Exit the current instance
+} else {
+  // Create a lock file
+  fs.writeFileSync(lockFilePath, "");
+}
+// Remove the lock file when the process exits
+process.on("exit", () => {
+  fs.unlinkSync(lockFilePath);
+});
 // Function to save processed transactions to file
 function saveProcessedTransactions() {
   try {
