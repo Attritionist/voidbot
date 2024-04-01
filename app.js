@@ -91,7 +91,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue(); // Send the next message in the queue
-    }, 2500);
+    }, 2000);
   }
 }
 async function sendMessageFromQueue() {
@@ -112,7 +112,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue(); // Send the next message in the queue
-    }, 2500);
+    }, 2000);
   }
 }
 
@@ -122,7 +122,7 @@ sendMessageFromQueue();
   if (pinMessage) {
     try {
       // Wait for a short duration to ensure the message is sent before pinning
-      await sleep(1000);
+      await sleep(2000);
       // Pin the message in the group
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
@@ -139,7 +139,7 @@ async function sendAnimationMessage(animation, options, pinMessage = false) {
   if (pinMessage) {
     try {
       // Wait for a short duration to ensure the message is sent before pinning
-      await sleep(1000);
+      await sleep(2000);
       // Pin the message in the group
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
@@ -263,8 +263,6 @@ async function detectUniswapLatestTransaction() {
         for (let i = 0; i < emojiCount; i++) {
           emojiString += isBuy ? "🟣🔥" : "🔴🤡";
         }
-        const marketCap = voidPriceInUsd * totalSupply;
-
          const balanceDetailsUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${TOKEN_CONTRACT}&address=${AddressOf}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
         const balanceDetailResponse = await axios.get(balanceDetailsUrl);
         if (balanceDetailResponse.data.status === "1") {
@@ -435,7 +433,7 @@ async function detectUniswapLatestTransaction() {
   isBuy
     ? `Bought ${voidAmount} VOID (<a href="${addressLink}">View Address</a>)`
     : `Sold ${amountTransferred.toFixed(3)} VOID (<a href="${addressLink}">View Address</a>)`
-}\n<a href="${chartLink}">📈 Chart</a>\n<a href="${txHashLink}">TX Hash</a>\n💰 Market Cap: $${isBuy ? marketCap.toLocaleString() : (marketCap / 2).toLocaleString()}\n🟣 Remaining VOID Balance: ${voidBalance}\n🛡️ VOID Rank: ${voidRank}`;
+}\n<a href="${chartLink}">📈 Chart</a>\n<a href="${txHashLink}">TX Hash</a>\n🟣 Remaining VOID Balance: ${voidBalance}\n🛡️ VOID Rank: ${voidRank}`;
 
 
           const voidMessageOptions = {
@@ -550,5 +548,5 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-setInterval(detectVoidBurnEvent, 15000);
+setInterval(detectVoidBurnEvent, 60000);
 setInterval(detectUniswapLatestTransaction, 5000);
