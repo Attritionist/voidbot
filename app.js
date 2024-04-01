@@ -178,7 +178,7 @@ async function detectUniswapTransactions() {
       const addressLink = `https://debank.com/profile/${AddressOf}`;
       const txHashLink = `https://basescan.org/tx/${transaction.hash}`;
       const chartLink =
-        "https://dexscreener.com/base/0xBf949F74Eb6Ae999f35e4706A236f8792b88Cb73";
+        "https://dexscreener.com/base/0xb14e941d34d61ae251ccc08ac15b8455ae9f60a5";
 
       const txDetailsUrl = `https://api.basescan.org/api?module=account&action=txlistinternal&txhash=${transaction.hash}&apikey=${ETHERSCAN_API_KEY}`;
 
@@ -531,4 +531,4 @@ async function updateTotalBurnedAmount() {
   }
 }
 setInterval(detectVoidBurnEvent, 15000);
-setInterval(detectUniswapTransactions, 10000);
+setInterval(detectUniswapTransactions, 15000);
