@@ -436,17 +436,10 @@ async function detectUniswapLatestTransaction() {
             caption: message,
             parse_mode: "HTML",
           };
-          if (isBuy) {
-            minimumTransactionValueUsd = 100; // Minimum threshold for buy transactions
-          } else {
-            minimumTransactionValueUsd = 10000000000; // Minimum threshold for sell transactions
-          }
+          if (!isBuy) {
+            minimumTransactionValueUsd = 10000000000000; }
 
-          if (transaction.hash === lastProcessedTransactionHash) {
-            console.log("No new transactions detected.");
-            return;
-          }
-          if (dollarValue < minimumTransactionValueUsd) {
+          if (transaction.hash === lastProcessedTransactionHash || (!isBuy && dollarValue < minimumTransactionValueUsd)) {
   console.log(`Skipping transaction below minimum threshold: $${dollarValue}`);
   return;
 }
