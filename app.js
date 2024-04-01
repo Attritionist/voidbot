@@ -252,7 +252,7 @@ async function detectUniswapTransactions() {
           ? amountTransferred.toFixed(2)
           : amountTransferred.toFixed(2);
         const voidDollarValue = (voidAmount * voidUsdPrice).toFixed(2);
-        const emojiCount = Math.min(Math.ceil(amountTransferred / 100000), 96); // Scale up to a maximum of 5 emojis
+        const emojiCount = Math.min(Math.ceil(amountTransferred / 10000), 96); // Scale up to a maximum of 5 emojis
         let emojiString = "";
         for (let i = 0; i < emojiCount; i++) {
           emojiString += isBuy ? "🟣🔥" : "🔴🤡";
