@@ -61,7 +61,7 @@ setInterval(async () => {
   if (ethUsdPrice !== null) {
     currentEthUsdPrice = ethUsdPrice;
   }
-}, 5000);
+}, 30000);
 
 let currentEthUsdPrice = null;
 const messageQueue = [];
