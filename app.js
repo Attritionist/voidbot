@@ -8,6 +8,7 @@ const ETHERSCAN_API_KEY = process.env["ETHERSCAN_API_KEY"];
 const TOKEN_CONTRACT = process.env["TOKEN_CONTRACT"];
 const POOL_CONTRACT = process.env["POOL_CONTRACT"];
 const MAX_CONSECUTIVE_NO_TRANSACTIONS = 5;
+const MINIMUM_TRANSACTION_VALUE_USD = 400;
 let consecutiveNoBurn = 0;
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
@@ -149,7 +150,7 @@ async function sendAnimationMessage(animation, options, pinMessage = false) {
   }
 }
 
-async function detectUniswapTransactions() {
+async function detectUniswapLatestTransaction() {
   try {
     if (currentEthUsdPrice === null) {
       console.log("Waiting for ETH-USD price data...");
@@ -158,20 +159,22 @@ async function detectUniswapTransactions() {
 
     const ethUsdPrice = currentEthUsdPrice;
 
-    const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=${POOL_CONTRACT}&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
+    const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=${POOL_CONTRACT}&page=1&offset=1&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
     const response = await axios.get(apiUrl);
 
     if (response.data.status !== "1") {
-      throw new Error("Failed to retrieve Uniswap transactions");
+      throw new Error("Failed to retrieve latest Uniswap transaction");
     }
 
+    const latestTransaction = response.data.result[0];
+
+  
     const newTransactions = response.data.result.filter(
       (transaction) => !processedTransactions.has(transaction.hash)
     );
 
     for (const transaction of newTransactions) {
-      const amountTransferred =
-        Number(transaction.value) / 10 ** tokenDecimals;
+    
       const isBuy =
         transaction.from.toLowerCase() === POOL_CONTRACT.toLowerCase();
       const AddressOf = isBuy ? transaction.to : transaction.from;
@@ -181,7 +184,14 @@ async function detectUniswapTransactions() {
         "https://dexscreener.com/base/0xBf949F74Eb6Ae999f35e4706A236f8792b88Cb73";
 
       const txDetailsUrl = `https://api.basescan.org/api?module=account&action=txlistinternal&txhash=${transaction.hash}&apikey=${ETHERSCAN_API_KEY}`;
+      const amountTransferred =
+      Number(latestTransaction.value) / 10 ** tokenDecimals;
+    const transactionValueUSD = amountTransferred * ethUsdPrice;
 
+    if (transactionValueUSD < MINIMUM_TRANSACTION_VALUE_USD) {
+      console.log(`Skipping transaction below minimum threshold: $${MINIMUM_TRANSACTION_VALUE_USD}`);
+      return;
+    }
       const txDetailsResponse = await axios.get(txDetailsUrl);
       if (txDetailsResponse.data.status === "1") {
         const ethAmount = txDetailsResponse.data.result
@@ -251,8 +261,7 @@ async function detectUniswapTransactions() {
         const voidAmount = isBuy
           ? amountTransferred.toFixed(2)
           : amountTransferred.toFixed(2);
-        const voidDollarValue = (voidAmount * voidUsdPrice).toFixed(2);
-        const emojiCount = Math.min(Math.ceil(amountTransferred / 100000), 96); // Scale up to a maximum of 5 emojis
+        const emojiCount = Math.min(Math.ceil(amountTransferred / 10000), 96); // Scale up to a maximum of 5 emojis
         let emojiString = "";
         for (let i = 0; i < emojiCount; i++) {
           emojiString += isBuy ? "🟣🔥" : "🔴🤡";
@@ -424,25 +433,25 @@ async function detectUniswapTransactions() {
               break;
           }
           const message = `${emojiString}\n\n💸 ${
-            isBuy ? "Spent" : "Received"
-          }: ${ethValue} ${isBuy ? "WETH" : "ETH"} ($${dollarValue})\n💼 ${
-            isBuy
-              ? `Bought ${voidAmount} VOID (<a href="${addressLink}">View Address</a>)`
-              : `Sold ${amountTransferred.toFixed(3)} VOID (<a href="${addressLink}">View Address</a>)`
-          }\n<a href="${chartLink}">📈 Chart</a>\n<a href="${txHashLink}">TX Hash</a>\n💰 Market Cap: $${isBuy ? marketCap.toLocaleString() : (marketCap / 2).toLocaleString()}\n🟣 Remaining VOID Balance: ${voidBalance}\n🛡️ VOID Rank: ${voidRank}`;
-          
+  isBuy ? "Spent" : "Received"
+}: ${ethValue} ${isBuy ? "WETH" : "ETH"} ($${dollarValue})\n💼 ${
+  isBuy
+    ? `Bought ${voidAmount} VOID (<a href="${addressLink}">View Address</a>)`
+    : `Sold ${amountTransferred.toFixed(3)} VOID (<a href="${addressLink}">View Address</a>)`
+}\n<a href="${chartLink}">📈 Chart</a>\n<a href="${txHashLink}">TX Hash</a>\n💰 Market Cap: $${isBuy ? marketCap.toLocaleString() : (marketCap / 2).toLocaleString()}\n🟣 Remaining VOID Balance: ${voidBalance}\n🛡️ VOID Rank: ${voidRank}`;
+
 
           const voidMessageOptions = {
             caption: message,
             parse_mode: "HTML",
           };
-        if (dollarValue > 400)
+        
           sendPhotoMessage(imageUrl, voidMessageOptions, false);
 
            processedTransactions.add(transaction.hash);
         } else {
           console.error(
-            "Failed to retrieve transaction details or Value was low",
+            "Failed to retrieve transaction details:",
             txDetailsResponse.data.message
           );
         }
