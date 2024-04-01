@@ -60,7 +60,7 @@ setInterval(async () => {
   if (ethUsdPrice !== null) {
     currentEthUsdPrice = ethUsdPrice;
   }
-}, 5000);
+}, 30000);
 
 let currentEthUsdPrice = null;
 const messageQueue = [];
@@ -121,7 +121,7 @@ sendMessageFromQueue();
   if (pinMessage) {
     try {
       // Wait for a short duration to ensure the message is sent before pinning
-      await sleep(1000);
+      await sleep(2000);
       // Pin the message in the group
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
@@ -138,7 +138,7 @@ async function sendAnimationMessage(animation, options, pinMessage = false) {
   if (pinMessage) {
     try {
       // Wait for a short duration to ensure the message is sent before pinning
-      await sleep(1000);
+      await sleep(2000);
       // Pin the message in the group
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
@@ -531,4 +531,4 @@ async function updateTotalBurnedAmount() {
   }
 }
 setInterval(detectVoidBurnEvent, 15000);
-setInterval(detectUniswapTransactions, 5000);
+setInterval(detectUniswapTransactions, 10000);
