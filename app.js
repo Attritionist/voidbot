@@ -442,9 +442,6 @@ async function detectVoidBurnEvent() {
       console.log("No new burn detected.");
       return;
     }
-    
-    newBurnEvents.forEach((transaction) => {
-      processedTransactions.add(transaction.hash);
       const amountBurned =
         Number(transaction.value) / 10 ** tokenDecimals;
       const txHash = transaction.hash;
@@ -467,9 +464,8 @@ async function detectVoidBurnEvent() {
       sendAnimationMessage(burnAnimation, burnanimationMessageOptions, true);
 
       lastProcessedBurnHash = newBurnEvents.hash;
-      
-    });
-  } catch (error) {
+    }
+   catch (error) {
     console.error("Error detecting token burn event:", error);
   }
 }
