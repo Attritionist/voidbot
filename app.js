@@ -251,6 +251,7 @@ async function detectUniswapLatestTransaction() {
           "THE VOID": 2000000       
         };
         let voidRank = "Void Peasant"; // Default rank
+        let minimumTransactionValueUsd = 0; // Default minimum threshold
         const ethValue = ethAmount.toFixed(6);
         const totalSupply = 100000000;
         const dollarValue = (ethAmount * ethUsdPrice).toFixed(2);
@@ -441,10 +442,20 @@ async function detectUniswapLatestTransaction() {
             caption: message,
             parse_mode: "HTML",
           };
+          if (isBuy) {
+            minimumTransactionValueUsd = 100; // Minimum threshold for buy transactions
+          } else {
+            minimumTransactionValueUsd = 1000; // Minimum threshold for sell transactions
+          }
+
           if (transaction.hash === lastProcessedTransactionHash) {
             console.log("No new transactions detected.");
             return;
           }
+          if (transactionValueUSD < minimumTransactionValueUsd) {
+  console.log(`Skipping transaction below minimum threshold: $${minimumTransactionValueUsd}`);
+  return;
+}
           sendPhotoMessage(imageUrl, voidMessageOptions, false);
           lastProcessedTransactionHash = transaction.hash;
           // Process the latest transaction
