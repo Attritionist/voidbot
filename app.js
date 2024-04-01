@@ -149,6 +149,7 @@ async function sendAnimationMessage(animation, options, pinMessage = false) {
     }
   }
 }
+let lastProcessedTransactionHash = null;
 
 async function detectUniswapLatestTransaction() {
   try {
@@ -166,17 +167,10 @@ async function detectUniswapLatestTransaction() {
       throw new Error("Failed to retrieve latest Uniswap transaction");
     }
 
-    const latestTransaction = response.data.result[0];
-
-  
-    const newTransactions = response.data.result.filter(
-      (transaction) => !processedTransactions.has(transaction.hash)
-    );
-
-    for (const transaction of newTransactions) {
+    const transaction = response.data.result[0];
     
       const isBuy =
-        transaction.from.toLowerCase() === POOL_CONTRACT.toLowerCase();
+      transaction.from.toLowerCase() === POOL_CONTRACT.toLowerCase();
       const AddressOf = isBuy ? transaction.to : transaction.from;
       const addressLink = `https://debank.com/profile/${AddressOf}`;
       const txHashLink = `https://basescan.org/tx/${transaction.hash}`;
@@ -185,8 +179,10 @@ async function detectUniswapLatestTransaction() {
 
       const txDetailsUrl = `https://api.basescan.org/api?module=account&action=txlistinternal&txhash=${transaction.hash}&apikey=${ETHERSCAN_API_KEY}`;
       const amountTransferred =
-      Number(latestTransaction.value) / 10 ** tokenDecimals;
+      Number(transaction.value) / 10 ** tokenDecimals;
+
     const transactionValueUSD = amountTransferred * ethUsdPrice;
+
 
     if (transactionValueUSD < MINIMUM_TRANSACTION_VALUE_USD) {
       console.log(`Skipping transaction below minimum threshold: $${MINIMUM_TRANSACTION_VALUE_USD}`);
@@ -197,6 +193,8 @@ async function detectUniswapLatestTransaction() {
         const ethAmount = txDetailsResponse.data.result
           .filter((result) => result.isError === "0")
           .reduce((sum, result) => sum + Number(result.value), 0) / 10 ** 18;
+          const voidPriceInEth = ethAmount / amountTransferred;
+          const voidPriceInUsd = voidPriceInEth * ethUsdPrice;
         const VOID_RANKS = {
           "VOID Peasant": 1,
           "VOID Initiate": 1000,
@@ -256,8 +254,6 @@ async function detectUniswapLatestTransaction() {
         const ethValue = ethAmount.toFixed(6);
         const totalSupply = 100000000;
         const dollarValue = (ethAmount * ethUsdPrice).toFixed(2);
-        const voidUsdPrice =
-          (ethAmount / amountTransferred) * ethUsdPrice;
         const voidAmount = isBuy
           ? amountTransferred.toFixed(2)
           : amountTransferred.toFixed(2);
@@ -266,7 +262,7 @@ async function detectUniswapLatestTransaction() {
         for (let i = 0; i < emojiCount; i++) {
           emojiString += isBuy ? "🟣🔥" : "🔴🤡";
         }
-        const marketCap = voidUsdPrice * totalSupply;
+        const marketCap = voidPriceInUsd * totalSupply;
 
          const balanceDetailsUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${TOKEN_CONTRACT}&address=${AddressOf}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
         const balanceDetailResponse = await axios.get(balanceDetailsUrl);
@@ -445,10 +441,15 @@ async function detectUniswapLatestTransaction() {
             caption: message,
             parse_mode: "HTML",
           };
-        
+          if (transaction.hash === lastProcessedTransactionHash) {
+            console.log("No new transactions detected.");
+            return;
+          }
           sendPhotoMessage(imageUrl, voidMessageOptions, false);
-
-           processedTransactions.add(transaction.hash);
+          lastProcessedTransactionHash = transaction.hash;
+          // Process the latest transaction
+          console.log("Latest transaction:", transaction);
+          // Your code to process and send the transaction to Telegram goes here...
         } else {
           console.error(
             "Failed to retrieve transaction details:",
@@ -456,9 +457,8 @@ async function detectUniswapLatestTransaction() {
           );
         }
 
-        saveProcessedTransactions(processedTransactions);
       }
-    }
+    
   } catch (error) {
     console.error("Error detecting Uniswap transactions:", error);
   }
@@ -540,4 +540,4 @@ async function updateTotalBurnedAmount() {
   }
 }
 setInterval(detectVoidBurnEvent, 15000);
-setInterval(detectUniswapTransactions, 5000);
+setInterval(detectUniswapLatestTransaction, 5000);
