@@ -60,7 +60,7 @@ setInterval(async () => {
   if (ethUsdPrice !== null) {
     currentEthUsdPrice = ethUsdPrice;
   }
-}, 30000);
+}, 5000);
 
 let currentEthUsdPrice = null;
 const messageQueue = [];
@@ -90,7 +90,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue(); // Send the next message in the queue
-    }, 5000);
+    }, 2500);
   }
 }
 async function sendMessageFromQueue() {
@@ -111,7 +111,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue(); // Send the next message in the queue
-    }, 5000);
+    }, 2500);
   }
 }
 
@@ -121,7 +121,7 @@ sendMessageFromQueue();
   if (pinMessage) {
     try {
       // Wait for a short duration to ensure the message is sent before pinning
-      await sleep(2500);
+      await sleep(1000);
       // Pin the message in the group
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
@@ -138,7 +138,7 @@ async function sendAnimationMessage(animation, options, pinMessage = false) {
   if (pinMessage) {
     try {
       // Wait for a short duration to ensure the message is sent before pinning
-      await sleep(2500);
+      await sleep(1000);
       // Pin the message in the group
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
@@ -178,7 +178,7 @@ async function detectUniswapTransactions() {
       const addressLink = `https://debank.com/profile/${AddressOf}`;
       const txHashLink = `https://basescan.org/tx/${transaction.hash}`;
       const chartLink =
-        "https://dexscreener.com/base/0xb14e941d34d61ae251ccc08ac15b8455ae9f60a5";
+        "https://dexscreener.com/base/0xBf949F74Eb6Ae999f35e4706A236f8792b88Cb73";
 
       const txDetailsUrl = `https://api.basescan.org/api?module=account&action=txlistinternal&txhash=${transaction.hash}&apikey=${ETHERSCAN_API_KEY}`;
 
@@ -252,7 +252,7 @@ async function detectUniswapTransactions() {
           ? amountTransferred.toFixed(2)
           : amountTransferred.toFixed(2);
         const voidDollarValue = (voidAmount * voidUsdPrice).toFixed(2);
-        const emojiCount = Math.min(Math.ceil(amountTransferred / 10000), 96); // Scale up to a maximum of 5 emojis
+        const emojiCount = Math.min(Math.ceil(amountTransferred / 100000), 96); // Scale up to a maximum of 5 emojis
         let emojiString = "";
         for (let i = 0; i < emojiCount; i++) {
           emojiString += isBuy ? "🟣🔥" : "🔴🤡";
@@ -436,13 +436,13 @@ async function detectUniswapTransactions() {
             caption: message,
             parse_mode: "HTML",
           };
-        
+        if (dollarValue > 400)
           sendPhotoMessage(imageUrl, voidMessageOptions, false);
 
            processedTransactions.add(transaction.hash);
         } else {
           console.error(
-            "Failed to retrieve transaction details:",
+            "Failed to retrieve transaction details or Value was low",
             txDetailsResponse.data.message
           );
         }
@@ -531,4 +531,4 @@ async function updateTotalBurnedAmount() {
   }
 }
 setInterval(detectVoidBurnEvent, 15000);
-setInterval(detectUniswapTransactions, 15000);
+setInterval(detectUniswapTransactions, 5000);
