@@ -90,7 +90,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue(); // Send the next message in the queue
-    }, 2500);
+    }, 5000);
   }
 }
 async function sendMessageFromQueue() {
@@ -111,7 +111,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue(); // Send the next message in the queue
-    }, 2500);
+    }, 5000);
   }
 }
 
@@ -121,7 +121,7 @@ sendMessageFromQueue();
   if (pinMessage) {
     try {
       // Wait for a short duration to ensure the message is sent before pinning
-      await sleep(2000);
+      await sleep(2500);
       // Pin the message in the group
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
@@ -138,7 +138,7 @@ async function sendAnimationMessage(animation, options, pinMessage = false) {
   if (pinMessage) {
     try {
       // Wait for a short duration to ensure the message is sent before pinning
-      await sleep(2000);
+      await sleep(2500);
       // Pin the message in the group
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
