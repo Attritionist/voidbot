@@ -439,10 +439,10 @@ const voidMessageOptions = {
   caption: message,
   parse_mode: "HTML",
 };
-minimumTransactionValueUsd = isBuy ? 200 : 10000000000000;
+if (!isBuy) {
+  minimumTransactionValueUsd = 10000000000000; }
 
-
-if (transaction.hash === lastProcessedTransactionHash || (dollarValue < minimumTransactionValueUsd)) {
+if (transaction.hash === lastProcessedTransactionHash || (!isBuy && dollarValue < minimumTransactionValueUsd)) {
 console.log(`Skipping transaction below minimum threshold: $${dollarValue}`);
 return;
 } else {
@@ -501,8 +501,8 @@ async function detectVoidBurnEvent() {
       const txHashLink = `https://basescan.org/tx/${txHash}`;
       const chartLink = "https://dexscreener.com/base/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc";
       const percentBurned =
-        ((initialSupply - totalBurnedAmount) / initialSupply) * 100;
-      totalBurnedAmount += amountBurned;
+        ((initialSupply - totalBurnedAmountt) / initialSupply) * 100;
+        totalBurnedAmountt += amountBurned;
       const burnMessage = `VOID Burned!\n\n💀💀💀💀💀\n🔥 Burned: ${amountBurned.toFixed(
         3
       )} VOID\nPercent Burned: ${percentBurned.toFixed(
@@ -525,6 +525,7 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 let totalBurnedAmount = 0;
+let totalBurnedAmountt = 0;
 
 async function updateTotalBurnedAmount() {
   try {
@@ -534,6 +535,8 @@ async function updateTotalBurnedAmount() {
     if (response.data.status === "1") {
       const balance = Number(response.data.result) / 10 ** tokenDecimals;
       totalBurnedAmount = balance;
+      totalBurnedAmountt = initialSupply - balance;
+
     }
   } catch (error) {
     console.error("Error updating total burned amount:", error);
