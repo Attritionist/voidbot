@@ -12,7 +12,7 @@ let consecutiveNoBurn = 0;
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
 const initialSupply = 100000000;
-const BURN_SLEEP_DURATION = 40000;
+const BURN_SLEEP_DURATION = 30000;
 const burnAnimation = "https://voidonbase.com/burn.gif";
 const fs = require("fs");
 const processedTransactionsFilePath = "processed_transactions.json";
@@ -45,25 +45,22 @@ function saveProcessedTransactions() {
 async function getCryptoPrice() {
   try {
     const response = await axios.get(
-      "https://api.coingecko.com/api/v3/simple/price?ids=ethereum,the-void&vs_currencies=usd"
+      "https://api.coingecko.com/api/v3/simple/price?ids=the-void&vs_currencies=usd"
     );
-    const ethPrice = response.data.ethereum.usd;
     const voidPrice = response.data["the-void"].usd;
-    return { ethPrice, voidPrice };
+    return {voidPrice};
   } catch (error) {
     console.error("Error fetching crypto prices:", error);
     return null;
   }
 }
 setInterval(async () => {
-  const prices = await getCryptoPrice();
-  if (prices !== null) {
-    currentEthUsdPrice = prices.ethPrice;
-    currentVoidUsdPrice = prices.voidPrice;
+  const voidPrice = await getCryptoPrice();
+  if (voidPrice !== null) {
+    currentVoidUsdPrice = voidPrice;
   }
-}, 40000);
+}, 20000);
 
-let currentEthUsdPrice = null;
 let currentVoidUsdPrice = null;
 
 const messageQueue = [];
@@ -147,12 +144,11 @@ let lastProcessedTransactionHash = null;
 
 async function detectUniswapLatestTransaction() {
   try {
-    if (currentEthUsdPrice === null || currentVoidUsdPrice === null) {
-      console.log("Waiting for ETH-USD price data...");
+    if (currentVoidUsdPrice === null) {
+      console.log("Waiting for VOID price data...");
       return;
     }
 
-    const ethUsdPrice = currentEthUsdPrice;
     const voidPrice = currentVoidUsdPrice;
 
     const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=${POOL_CONTRACT}&page=1&offset=1&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
@@ -245,7 +241,6 @@ async function detectUniswapLatestTransaction() {
         const percentBurned = totalBurnedAmount / initialSupply * 100;
         
         const marketCap = voidPrice * totalSupply;
-        const dollarValue = (ethAmount * ethUsdPrice).toFixed(2);
         const voidAmount = isBuy
           ? amountTransferred.toFixed(2)
           : amountTransferred.toFixed(2);
@@ -421,7 +416,7 @@ async function detectUniswapLatestTransaction() {
           
           const message = `${emojiString}\n\n💸 ${
   isBuy ? "Spent" : "Received"
-}: ${ethValue} ${isBuy ? "ETH" : "ETH"} ($${dollarValue})\n💼 ${
+}: ${ethValue} ${isBuy ? "ETH" : "ETH"}\n💼 ${
   isBuy
     ? `Bought ${voidAmount} VOID (<a href="${addressLink}">View Address</a>)`
     : `Sold ${amountTransferred.toFixed(3)} VOID (<a href="${addressLink}">View Address</a>)`
@@ -431,19 +426,10 @@ const voidMessageOptions = {
   caption: message,
   parse_mode: "HTML",
 };
-if (isBuy) {
-  minimumTransactionValueUsd = 200;
-} else {
-  minimumTransactionValueUsd = 10000000000;
-}
 
 if (transaction.hash === lastProcessedTransactionHash) {
   console.log("No new transactions detected.");
   return;
-}
-if (dollarValue < minimumTransactionValueUsd) {
-console.log(`Skipping transaction below minimum threshold: $${dollarValue}`);
-return;
 }
 sendPhotoMessage(imageUrl, voidMessageOptions, false);
 lastProcessedTransactionHash = transaction.hash;
@@ -543,5 +529,5 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-setInterval(detectVoidBurnEvent, 40000);
-setInterval(detectUniswapLatestTransaction, 20000);
+setInterval(detectVoidBurnEvent, 10000);
+setInterval(detectUniswapLatestTransaction, 10000);
