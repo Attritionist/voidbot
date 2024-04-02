@@ -68,7 +68,7 @@ setInterval(async () => {
   } catch (error) {
     console.error("Error updating prices:", error);
   }
-}, 60000);
+}, 30000);
 
 let currentEthUsdPrice = null;
 let currentVoidUsdPrice = null;
@@ -538,5 +538,5 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-setInterval(detectUniswapLatestTransaction, 10000);
-setInterval(detectVoidBurnEvent, 60000);
+setInterval(detectUniswapLatestTransaction, 7500);
+setInterval(detectVoidBurnEvent, 10000);
