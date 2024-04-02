@@ -61,7 +61,7 @@ setInterval(async () => {
     currentEthUsdPrice = prices.ethPrice;
     currentVoidUsdPrice = prices.voidPrice;
   }
-}, 15000);
+}, 60000);
 
 let currentEthUsdPrice = null;
 let currentVoidUsdPrice = null;
@@ -91,7 +91,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2000);
+    }, 3000);
   }
 }
 async function sendMessageFromQueue() {
@@ -110,7 +110,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2000);
+    }, 3000);
   }
 }
 
@@ -119,7 +119,7 @@ async function sendPhotoMessage(photo, options, pinMessage = false) {
 sendMessageFromQueue();
   if (pinMessage) {
     try {
-      await sleep(2000);
+      await sleep(3000);
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
       });
@@ -135,7 +135,7 @@ async function sendAnimationMessage(animation, options, pinMessage = false) {
   if (pinMessage) {
     try {
       // Wait for a short duration to ensure the message is sent before pinning
-      await sleep(2000);
+      await sleep(3000);
       // Pin the message in the group
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
@@ -533,5 +533,5 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-setInterval(detectVoidBurnEvent, 10000);
-setInterval(detectUniswapLatestTransaction, 5000);
+setInterval(detectVoidBurnEvent, 24000);
+setInterval(detectUniswapLatestTransaction, 6000);
