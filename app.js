@@ -433,9 +433,9 @@ const voidMessageOptions = {
   caption: message,
   parse_mode: "HTML",
 };
-minimumTransactionValueUsd = isBuy ? 100 : 10000000000000;
+minimumTransactionValueUsd = isBuy ? 200 : 10000000000000;
 
-if (transaction.hash === lastProcessedTransactionHash || (!isBuy && dollarValue < minimumTransactionValueUsd)) {
+if (transaction.hash === lastProcessedTransactionHash || (dollarValue < minimumTransactionValueUsd)) {
 console.log(`Skipping transaction below minimum threshold: $${dollarValue}`);
 return;
 } else {
