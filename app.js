@@ -68,7 +68,7 @@ setInterval(async () => {
   } catch (error) {
     console.error("Error updating prices:", error);
   }
-}, 30000);
+}, 60000);
 
 let currentEthUsdPrice = null;
 let currentVoidUsdPrice = null;
@@ -98,7 +98,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2000);
+    }, 3000);
   }
 }
 async function sendMessageFromQueue() {
@@ -117,7 +117,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2000);
+    }, 3000);
   }
 }
 
@@ -126,7 +126,7 @@ async function sendPhotoMessage(photo, options, pinMessage = false) {
 sendMessageFromQueue();
   if (pinMessage) {
     try {
-      await sleep(2000);
+      await sleep(3000);
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
       });
@@ -141,7 +141,7 @@ async function sendAnimationMessage(animation, options, pinMessage = false) {
 
   if (pinMessage) {
     try {
-      await sleep(2000);
+      await sleep(3000);
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
       });
@@ -438,9 +438,10 @@ const voidMessageOptions = {
   caption: message,
   parse_mode: "HTML",
 };
-minimumTransactionValueUsd = isBuy ? 200 : 100000000;
+if (!isBuy) {
+  minimumTransactionValueUsd = 100000000000; }
 
-if (transaction.hash === lastProcessedTransactionHash || (dollarValue < minimumTransactionValueUsd)) {
+if (transaction.hash === lastProcessedTransactionHash || (!isBuy && dollarValue < minimumTransactionValueUsd)) {
 console.log(`Skipping transaction below minimum threshold: $${dollarValue}`);
 return;
 } else {
@@ -532,11 +533,10 @@ async function updateTotalBurnedAmount() {
       const balance = Number(response.data.result) / 10 ** tokenDecimals;
       totalBurnedAmount = balance;
       totalBurnedAmountt = initialSupply - balance;
-
     }
   } catch (error) {
     console.error("Error updating total burned amount:", error);
   }
 }
-setInterval(detectVoidBurnEvent, 20000);
 setInterval(detectUniswapLatestTransaction, 10000);
+setInterval(detectVoidBurnEvent, 60000);
