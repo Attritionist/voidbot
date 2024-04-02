@@ -12,7 +12,7 @@ let consecutiveNoBurn = 0;
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
 const initialSupply = 100000000;
-const BURN_SLEEP_DURATION = 30000;
+const BURN_SLEEP_DURATION = 10000;
 const burnAnimation = "https://voidonbase.com/burn.gif";
 const fs = require("fs");
 const processedTransactionsFilePath = "processed_transactions.json";
@@ -56,19 +56,12 @@ async function getCryptoPrice() {
   }
 }
 setInterval(async () => {
-  try {
-    const prices = await getCryptoPrice();
-    if (prices !== null) {
-      currentEthUsdPrice = prices.ethPrice;
-      currentVoidUsdPrice = prices.voidPrice;
-      console.log("Prices updated successfully:", prices);
-    } else {
-      console.log("Prices not updated. Null response received.");
-    }
-  } catch (error) {
-    console.error("Error updating prices:", error);
+  const prices = await getCryptoPrice();
+  if (prices !== null) {
+    currentEthUsdPrice = prices.ethPrice;
+    currentVoidUsdPrice = prices.voidPrice;
   }
-}, 30000);
+}, 60000);
 
 let currentEthUsdPrice = null;
 let currentVoidUsdPrice = null;
@@ -87,6 +80,7 @@ async function sendBurnFromQueue() {
     isSendingMessage = true;
     const message = messageQueue.shift();
     try {
+      // Send the message
       await bot.sendAnimation(
         TELEGRAM_CHAT_ID,
         message.animation,
@@ -95,10 +89,11 @@ async function sendBurnFromQueue() {
     } catch (error) {
       console.error("Error sending message:", error);
     }
+    // Wait for 5 seconds before sending the next message
     setTimeout(() => {
       isSendingMessage = false;
-      sendMessageFromQueue();
-    }, 3000);
+      sendMessageFromQueue(); // Send the next message in the queue
+    }, 2000);
   }
 }
 async function sendMessageFromQueue() {
@@ -106,6 +101,7 @@ async function sendMessageFromQueue() {
     isSendingMessage = true;
     const message = messageQueue.shift();
     try {
+      // Send the message
       await bot.sendPhoto(
         TELEGRAM_CHAT_ID,
         message.photo,
@@ -114,10 +110,11 @@ async function sendMessageFromQueue() {
     } catch (error) {
       console.error("Error sending message:", error);
     }
+    // Wait for 5 seconds before sending the next message
     setTimeout(() => {
       isSendingMessage = false;
-      sendMessageFromQueue();
-    }, 3000);
+      sendMessageFromQueue(); // Send the next message in the queue
+    }, 2000);
   }
 }
 
@@ -126,7 +123,9 @@ async function sendPhotoMessage(photo, options, pinMessage = false) {
 sendMessageFromQueue();
   if (pinMessage) {
     try {
-      await sleep(3000);
+      // Wait for a short duration to ensure the message is sent before pinning
+      await sleep(2000);
+      // Pin the message in the group
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
       });
@@ -141,7 +140,9 @@ async function sendAnimationMessage(animation, options, pinMessage = false) {
 
   if (pinMessage) {
     try {
-      await sleep(3000);
+      // Wait for a short duration to ensure the message is sent before pinning
+      await sleep(2000);
+      // Pin the message in the group
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
       });
@@ -155,7 +156,7 @@ let lastProcessedTransactionHash = null;
 async function detectUniswapLatestTransaction() {
   try {
     if (currentEthUsdPrice === null || currentVoidUsdPrice === null) {
-      console.log("Waiting for price data...");
+      console.log("Waiting for ETH-USD price data...");
       return;
     }
 
@@ -438,29 +439,39 @@ const voidMessageOptions = {
   caption: message,
   parse_mode: "HTML",
 };
-if (!isBuy) {
-  minimumTransactionValueUsd = 100000000000; }
+if (isBuy) {
+  minimumTransactionValueUsd = 200; // Minimum threshold for buy transactions
+} else {
+  minimumTransactionValueUsd = 10000000000; // Minimum threshold for sell transactions
+}
 
-if (transaction.hash === lastProcessedTransactionHash || (!isBuy && dollarValue < minimumTransactionValueUsd)) {
+if (transaction.hash === lastProcessedTransactionHash) {
+  console.log("No new transactions detected.");
+  return;
+}
+if (dollarValue < minimumTransactionValueUsd) {
 console.log(`Skipping transaction below minimum threshold: $${dollarValue}`);
 return;
-} else {
+}
 sendPhotoMessage(imageUrl, voidMessageOptions, false);
 lastProcessedTransactionHash = transaction.hash;
-          console.log("Latest transaction:", transaction);
-        } } else {
-          console.error(
-            "Failed to retrieve transaction details:",
-            txDetailsResponse.data.message
-          );
-        }
-
-      }
-    
-  } catch (error) {
-    console.error("Error detecting Uniswap transactions:", error);
-  }
+// Process the latest transaction
+console.log("Latest transaction:", transaction);
+// Your code to process and send the transaction to Telegram goes here...
+} else {
+console.error(
+  "Failed to retrieve transaction details:",
+  txDetailsResponse.data.message
+);
 }
+
+}
+
+} catch (error) {
+console.error("Error detecting Uniswap transactions:", error);
+}
+}
+
 
 async function detectVoidBurnEvent() {
   try {  const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
@@ -533,10 +544,11 @@ async function updateTotalBurnedAmount() {
       const balance = Number(response.data.result) / 10 ** tokenDecimals;
       totalBurnedAmount = balance;
       totalBurnedAmountt = initialSupply - balance;
+
     }
   } catch (error) {
     console.error("Error updating total burned amount:", error);
   }
 }
-setInterval(detectUniswapLatestTransaction, 7500);
-setInterval(detectVoidBurnEvent, 10000);
+setInterval(detectVoidBurnEvent, 30000);
+setInterval(detectUniswapLatestTransaction, 10000);
