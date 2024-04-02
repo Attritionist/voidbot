@@ -12,7 +12,7 @@ let consecutiveNoBurn = 0;
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
 const initialSupply = 100000000;
-const BURN_SLEEP_DURATION = 5000;
+const BURN_SLEEP_DURATION = 30000;
 const burnAnimation = "https://voidonbase.com/burn.gif";
 const fs = require("fs");
 const processedTransactionsFilePath = "processed_transactions.json";
@@ -56,10 +56,17 @@ async function getCryptoPrice() {
   }
 }
 setInterval(async () => {
-  const prices = await getCryptoPrice();
-  if (prices !== null) {
-    currentEthUsdPrice = prices.ethPrice;
-    currentVoidUsdPrice = prices.voidPrice;
+  try {
+    const prices = await getCryptoPrice();
+    if (prices !== null) {
+      currentEthUsdPrice = prices.ethPrice;
+      currentVoidUsdPrice = prices.voidPrice;
+      console.log("Prices updated successfully:", prices);
+    } else {
+      console.log("Prices not updated. Null response received.");
+    }
+  } catch (error) {
+    console.error("Error updating prices:", error);
   }
 }, 30000);
 
@@ -134,9 +141,7 @@ async function sendAnimationMessage(animation, options, pinMessage = false) {
 
   if (pinMessage) {
     try {
-      // Wait for a short duration to ensure the message is sent before pinning
       await sleep(2000);
-      // Pin the message in the group
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
       });
@@ -534,4 +539,4 @@ async function updateTotalBurnedAmount() {
   }
 }
 setInterval(detectVoidBurnEvent, 20000);
-setInterval(detectUniswapLatestTransaction, 5000);
+setInterval(detectUniswapLatestTransaction, 10000);
