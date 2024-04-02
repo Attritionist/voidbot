@@ -423,7 +423,7 @@ async function detectUniswapLatestTransaction() {
               imageUrl = "https://voidonbase.com/rank54.png";
               break;
             default:
-              imageUrl = "https://voidonbase.com/rank1.png"; // Default image URL if rank not found
+              imageUrl = "https://voidonbase.com/rank1.png";
               break;
           }
           
@@ -431,8 +431,8 @@ async function detectUniswapLatestTransaction() {
   isBuy ? "Spent" : "Received"
 }: ${ethValue} ${isBuy ? "ETH" : "ETH"} ($${dollarValue})\n💼 ${
   isBuy
-    ? `Bought ${voidAmount} VOID (<a href="${addressLink}">View Address</a>`
-    : `Sold ${amountTransferred.toFixed(3)} VOID <a href="${addressLink}">(View Address)</a>`
+    ? `Bought ${voidAmount} VOID (<a href="${addressLink}">View Address</a>)`
+    : `Sold ${amountTransferred.toFixed(3)} VOID (<a href="${addressLink}">View Address</a>)`
 }\n🟣 VOID Price: $${voidPrice}\n💰 Market Cap: $${marketCap.toFixed(2)}\n🔥 Percent Burned: ${percentBurned.toFixed(2)}%\n<a href="${chartLink}">📈 Chart</a>\n<a href="${txHashLink}">💱 TX Hash</a>\n⚖️ Remaining VOID Balance: ${voidBalance}\n🛡️ VOID Rank: ${voidRank}`;
 
 const voidMessageOptions = {
@@ -448,9 +448,7 @@ return;
 } else {
 sendPhotoMessage(imageUrl, voidMessageOptions, false);
 lastProcessedTransactionHash = transaction.hash;
-          // Process the latest transaction
           console.log("Latest transaction:", transaction);
-          // Your code to process and send the transaction to Telegram goes here...
         } } else {
           console.error(
             "Failed to retrieve transaction details:",
