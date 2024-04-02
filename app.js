@@ -43,27 +43,30 @@ function saveProcessedTransactions() {
   }
 }
 
-async function getEthUsdPrice() {
+async function getCryptoPrice() {
   try {
     const response = await axios.get(
-      "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd"
+      "https://api.coingecko.com/api/v3/simple/price?ids=ethereum,the-void&vs_currencies=usd"
     );
     const ethPrice = response.data.ethereum.usd;
-    return ethPrice;
+    const voidPrice = response.data["the-void"].usd;
+    return { ethPrice, voidPrice };
   } catch (error) {
-    console.error("Error fetching ETH-USD price:", error);
+    console.error("Error fetching crypto prices:", error);
     return null;
   }
 }
-
 setInterval(async () => {
-  const ethUsdPrice = await getEthUsdPrice();
-  if (ethUsdPrice !== null) {
-    currentEthUsdPrice = ethUsdPrice;
+  const prices = await getCryptoPrice();
+  if (prices !== null) {
+    currentEthUsdPrice = prices.ethPrice;
+    currentVoidUsdPrice = prices.voidPrice;
   }
-}, 30000);
+}, 15000);
 
 let currentEthUsdPrice = null;
+let currentVoidUsdPrice = null;
+
 const messageQueue = [];
 let isSendingMessage = false;
 
@@ -153,12 +156,13 @@ let lastProcessedTransactionHash = null;
 
 async function detectUniswapLatestTransaction() {
   try {
-    if (currentEthUsdPrice === null) {
+    if (currentEthUsdPrice === null || currentVoidUsdPrice === null) {
       console.log("Waiting for ETH-USD price data...");
       return;
     }
 
     const ethUsdPrice = currentEthUsdPrice;
+    const voidPrice = currentVoidUsdPrice;
 
     const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=${POOL_CONTRACT}&page=1&offset=1&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
     const response = await axios.get(apiUrl);
@@ -181,15 +185,12 @@ async function detectUniswapLatestTransaction() {
       const amountTransferred =
       Number(transaction.value) / 10 ** tokenDecimals;
 
-    const transactionValueUSD = amountTransferred * ethUsdPrice;
 
       const txDetailsResponse = await axios.get(txDetailsUrl);
       if (txDetailsResponse.data.status === "1") {
         const ethAmount = txDetailsResponse.data.result
           .filter((result) => result.isError === "0")
           .reduce((sum, result) => sum + Number(result.value), 0) / 10 ** 18;
-          const voidPriceInEth = ethAmount / amountTransferred;
-          const voidPriceInUsd = voidPriceInEth * ethUsdPrice;
         const VOID_RANKS = {
           "VOID Peasant": 1,
           "VOID Initiate": 1000,
@@ -247,9 +248,12 @@ async function detectUniswapLatestTransaction() {
         };
         let voidRank = "Void Peasant";
         const ethValue = ethAmount.toFixed(6);
+
         const totalSupply = initialSupply - totalBurnedAmount;
-        const voidUsdPrice = ethAmount / amountTransferred * ethUsdPrice;
-        const marketCap = voidUsdPrice * totalSupply;
+
+        const percentBurned = totalBurnedAmount / initialSupply * 100;
+        
+        const marketCap = voidPrice * totalSupply;
         const dollarValue = (ethAmount * ethUsdPrice).toFixed(2);
         const voidAmount = isBuy
           ? amountTransferred.toFixed(2)
@@ -423,28 +427,28 @@ async function detectUniswapLatestTransaction() {
               imageUrl = "https://voidonbase.com/rank1.png"; // Default image URL if rank not found
               break;
           }
+          
           const message = `${emojiString}\n\n💸 ${
   isBuy ? "Spent" : "Received"
-}: ${ethValue} ${isBuy ? "WETH" : "ETH"} ($${dollarValue})\n💼 ${
+}: ${ethValue} ${isBuy ? "ETH" : "ETH"} ($${dollarValue})\n💼 ${
   isBuy
-    ? `Bought ${voidAmount} VOID (<a href="${addressLink}">View Address</a>)`
-    : `Sold ${amountTransferred.toFixed(3)} VOID (<a href="${addressLink}">View Address</a>)`
-}\n<a href="${chartLink}">📈 Chart</a>\n<a href="${txHashLink}">TX Hash</a>\n🟣 Remaining VOID Balance: ${voidBalance}\n🛡️ VOID Rank: ${voidRank}`;
+    ? `Bought ${voidAmount} VOID (<a href="${addressLink}">View Address</a>`
+    : `Sold ${amountTransferred.toFixed(3)} VOID <a href="${addressLink}">(View Address)</a>`
+}\n🟣 VOID Price: $${voidPrice}\n💰 Market Cap: $${marketCap.toFixed(2)}\n🔥 Percent Burned: ${percentBurned.toFixed(2)}%\n<a href="${chartLink}">📈 Chart</a>\n<a href="${txHashLink}">💱 TX Hash</a>\n⚖️ Remaining VOID Balance: ${voidBalance}\n🛡️ VOID Rank: ${voidRank}`;
 
+const voidMessageOptions = {
+  caption: message,
+  parse_mode: "HTML",
+};
+if (!isBuy) {
+  minimumTransactionValueUsd = 10000000000000; }
 
-          const voidMessageOptions = {
-            caption: message,
-            parse_mode: "HTML",
-          };
-          if (!isBuy) {
-            minimumTransactionValueUsd = 10000000000000; }
-
-          if (transaction.hash === lastProcessedTransactionHash || (!isBuy && dollarValue < minimumTransactionValueUsd)) {
-  console.log(`Skipping transaction below minimum threshold: $${dollarValue}`);
-  return;
+if (transaction.hash === lastProcessedTransactionHash || (!isBuy && dollarValue < minimumTransactionValueUsd)) {
+console.log(`Skipping transaction below minimum threshold: $${dollarValue}`);
+return;
 } else {
-          sendPhotoMessage(imageUrl, voidMessageOptions, false);
-          lastProcessedTransactionHash = transaction.hash;
+sendPhotoMessage(imageUrl, voidMessageOptions, false);
+lastProcessedTransactionHash = transaction.hash;
           // Process the latest transaction
           console.log("Latest transaction:", transaction);
           // Your code to process and send the transaction to Telegram goes here...
@@ -530,11 +534,11 @@ async function updateTotalBurnedAmount() {
 
     if (response.data.status === "1") {
       const balance = Number(response.data.result) / 10 ** tokenDecimals;
-      totalBurnedAmount = initialSupply - balance;
+      totalBurnedAmount = balance;
     }
   } catch (error) {
     console.error("Error updating total burned amount:", error);
   }
 }
-setInterval(detectVoidBurnEvent, 15000);
+setInterval(detectVoidBurnEvent, 20000);
 setInterval(detectUniswapLatestTransaction, 5000);
