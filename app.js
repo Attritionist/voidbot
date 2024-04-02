@@ -80,7 +80,6 @@ async function sendBurnFromQueue() {
     isSendingMessage = true;
     const message = messageQueue.shift();
     try {
-      // Send the message
       await bot.sendAnimation(
         TELEGRAM_CHAT_ID,
         message.animation,
@@ -89,10 +88,9 @@ async function sendBurnFromQueue() {
     } catch (error) {
       console.error("Error sending message:", error);
     }
-    // Wait for 5 seconds before sending the next message
     setTimeout(() => {
       isSendingMessage = false;
-      sendMessageFromQueue(); // Send the next message in the queue
+      sendMessageFromQueue();
     }, 2000);
   }
 }
@@ -101,7 +99,6 @@ async function sendMessageFromQueue() {
     isSendingMessage = true;
     const message = messageQueue.shift();
     try {
-      // Send the message
       await bot.sendPhoto(
         TELEGRAM_CHAT_ID,
         message.photo,
@@ -110,10 +107,9 @@ async function sendMessageFromQueue() {
     } catch (error) {
       console.error("Error sending message:", error);
     }
-    // Wait for 5 seconds before sending the next message
     setTimeout(() => {
       isSendingMessage = false;
-      sendMessageFromQueue(); // Send the next message in the queue
+      sendMessageFromQueue();
     }, 2000);
   }
 }
@@ -123,9 +119,7 @@ async function sendPhotoMessage(photo, options, pinMessage = false) {
 sendMessageFromQueue();
   if (pinMessage) {
     try {
-      // Wait for a short duration to ensure the message is sent before pinning
       await sleep(2000);
-      // Pin the message in the group
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
       });
@@ -439,8 +433,7 @@ const voidMessageOptions = {
   caption: message,
   parse_mode: "HTML",
 };
-if (!isBuy) {
-  minimumTransactionValueUsd = 10000000000000; }
+minimumTransactionValueUsd = isBuy ? 100 : 10000000000000;
 
 if (transaction.hash === lastProcessedTransactionHash || (!isBuy && dollarValue < minimumTransactionValueUsd)) {
 console.log(`Skipping transaction below minimum threshold: $${dollarValue}`);
@@ -540,5 +533,5 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-setInterval(detectVoidBurnEvent, 20000);
+setInterval(detectVoidBurnEvent, 10000);
 setInterval(detectUniswapLatestTransaction, 5000);
