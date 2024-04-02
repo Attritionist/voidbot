@@ -8,7 +8,6 @@ const ETHERSCAN_API_KEY = process.env["ETHERSCAN_API_KEY"];
 const TOKEN_CONTRACT = process.env["TOKEN_CONTRACT"];
 const POOL_CONTRACT = process.env["POOL_CONTRACT"];
 const MAX_CONSECUTIVE_NO_TRANSACTIONS = 5;
-const MINIMUM_TRANSACTION_VALUE_USD = 400;
 let consecutiveNoBurn = 0;
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
@@ -440,10 +439,10 @@ const voidMessageOptions = {
   caption: message,
   parse_mode: "HTML",
 };
-if (!isBuy) {
-  minimumTransactionValueUsd = 10000000000000; }
+minimumTransactionValueUsd = isBuy ? 200 : 10000000000000;
 
-if (transaction.hash === lastProcessedTransactionHash || (!isBuy && dollarValue < minimumTransactionValueUsd)) {
+
+if (transaction.hash === lastProcessedTransactionHash || (dollarValue < minimumTransactionValueUsd)) {
 console.log(`Skipping transaction below minimum threshold: $${dollarValue}`);
 return;
 } else {
