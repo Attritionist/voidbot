@@ -462,11 +462,15 @@ console.error(
 }
 
 }
-
 } catch (error) {
-console.error("Error detecting Uniswap transactions:", error);
-}
-}
+  if (error.response && error.response.status === 429) { // Rate limit error
+    console.error('Etherscan API rate limit reached');
+    // Pause the function for 60 seconds before retrying
+    setTimeout(detectUniswapLatestTransaction, 60000);
+  } else {
+    console.error("Error detecting Uniswap transactions:", error);
+  }
+}}
 
 
 async function detectVoidBurnEvent() {
