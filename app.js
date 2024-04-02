@@ -442,13 +442,13 @@ async function detectUniswapLatestTransaction() {
           if (transaction.hash === lastProcessedTransactionHash || (!isBuy && dollarValue < minimumTransactionValueUsd)) {
   console.log(`Skipping transaction below minimum threshold: $${dollarValue}`);
   return;
-}
+} else {
           sendPhotoMessage(imageUrl, voidMessageOptions, false);
           lastProcessedTransactionHash = transaction.hash;
           // Process the latest transaction
           console.log("Latest transaction:", transaction);
           // Your code to process and send the transaction to Telegram goes here...
-        } else {
+        } } else {
           console.error(
             "Failed to retrieve transaction details:",
             txDetailsResponse.data.message
