@@ -12,7 +12,7 @@ let consecutiveNoBurn = 0;
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
 const initialSupply = 100000000;
-const BURN_SLEEP_DURATION = 10000;
+const BURN_SLEEP_DURATION = 30000;
 const burnAnimation = "https://voidonbase.com/burn.gif";
 const fs = require("fs");
 const processedTransactionsFilePath = "processed_transactions.json";
@@ -61,7 +61,7 @@ setInterval(async () => {
     currentEthUsdPrice = prices.ethPrice;
     currentVoidUsdPrice = prices.voidPrice;
   }
-}, 60000);
+}, 30000);
 
 let currentEthUsdPrice = null;
 let currentVoidUsdPrice = null;
@@ -93,7 +93,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue(); // Send the next message in the queue
-    }, 2000);
+    }, 5000);
   }
 }
 async function sendMessageFromQueue() {
@@ -114,7 +114,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue(); // Send the next message in the queue
-    }, 2000);
+    }, 5000);
   }
 }
 
@@ -140,9 +140,7 @@ async function sendAnimationMessage(animation, options, pinMessage = false) {
 
   if (pinMessage) {
     try {
-      // Wait for a short duration to ensure the message is sent before pinning
       await sleep(2000);
-      // Pin the message in the group
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
       });
@@ -440,9 +438,9 @@ const voidMessageOptions = {
   parse_mode: "HTML",
 };
 if (isBuy) {
-  minimumTransactionValueUsd = 200; // Minimum threshold for buy transactions
+  minimumTransactionValueUsd = 200;
 } else {
-  minimumTransactionValueUsd = 10000000000; // Minimum threshold for sell transactions
+  minimumTransactionValueUsd = 10000000000;
 }
 
 if (transaction.hash === lastProcessedTransactionHash) {
@@ -455,9 +453,7 @@ return;
 }
 sendPhotoMessage(imageUrl, voidMessageOptions, false);
 lastProcessedTransactionHash = transaction.hash;
-// Process the latest transaction
 console.log("Latest transaction:", transaction);
-// Your code to process and send the transaction to Telegram goes here...
 } else {
 console.error(
   "Failed to retrieve transaction details:",
@@ -551,4 +547,4 @@ async function updateTotalBurnedAmount() {
   }
 }
 setInterval(detectVoidBurnEvent, 30000);
-setInterval(detectUniswapLatestTransaction, 10000);
+setInterval(detectUniswapLatestTransaction, 30000);
