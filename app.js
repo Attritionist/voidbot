@@ -175,7 +175,7 @@ async function detectUniswapLatestTransaction() {
       const addressLink = `https://debank.com/profile/${AddressOf}`;
       const txHashLink = `https://basescan.org/tx/${transaction.hash}`;
       const chartLink =
-        "https://dexscreener.com/base/0xBf949F74Eb6Ae999f35e4706A236f8792b88Cb73";
+        "https://dexscreener.com/base/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc";
 
       const txDetailsUrl = `https://api.basescan.org/api?module=account&action=txlistinternal&txhash=${transaction.hash}&apikey=${ETHERSCAN_API_KEY}`;
       const amountTransferred =
