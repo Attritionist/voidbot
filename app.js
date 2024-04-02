@@ -44,13 +44,10 @@ function saveProcessedTransactions() {
 
 async function getCryptoPrice() {
   try {
-    const response = await axios.get(
-      "https://api.coingecko.com/api/v3/simple/price?ids=the-void&vs_currencies=usd"
-    );
-    const voidPrice = response.data["the-void"].usd;
-    return {voidPrice};
+    const response = await axios.get("https://api.coingecko.com/api/v3/simple/price?ids=the-void&vs_currencies=usd");
+    return { voidPrice: response.data["the-void"].usd };
   } catch (error) {
-    console.error("Error fetching crypto prices:", error);
+    console.error("Error fetching crypto prices:", error.message);
     return null;
   }
 }
@@ -125,7 +122,7 @@ sendMessageFromQueue();
     }
   }
 }
-async function sendAnimationMessage(animation, options, pinMessage = false) {
+async function sendAnimationMessage(animation, options, pinMessage = true) {
   addToBurnQueue({ animation, options });
   sendBurnFromQueue();
 
@@ -154,86 +151,37 @@ async function detectUniswapLatestTransaction() {
     const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=${POOL_CONTRACT}&page=1&offset=1&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
     const response = await axios.get(apiUrl);
 
-    if (response.data.status !== "1") {
+    if (response.data.status !== "1" || response.data.result.length === 0) {
       throw new Error("Failed to retrieve latest Uniswap transaction");
     }
 
     const transaction = response.data.result[0];
-    
-      const isBuy =
-      transaction.from.toLowerCase() === POOL_CONTRACT.toLowerCase();
-      const AddressOf = isBuy ? transaction.to : transaction.from;
-      const addressLink = `https://debank.com/profile/${AddressOf}`;
-      const txHashLink = `https://basescan.org/tx/${transaction.hash}`;
-      const chartLink =
-        "https://dexscreener.com/base/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc";
 
-      const txDetailsUrl = `https://api.basescan.org/api?module=account&action=txlistinternal&txhash=${transaction.hash}&apikey=${ETHERSCAN_API_KEY}`;
-      const amountTransferred =
-      Number(transaction.value) / 10 ** tokenDecimals;
+    if (transaction.hash === lastProcessedTransactionHash) {
+      console.log("No new transactions detected.");
+      return; 
+    }
 
+    lastProcessedTransactionHash = transaction.hash;
 
-      const txDetailsResponse = await axios.get(txDetailsUrl);
-      if (txDetailsResponse.data.status === "1") {
+    const isBuy = transaction.from.toLowerCase() === POOL_CONTRACT.toLowerCase();
+    const AddressOf = isBuy ? transaction.to : transaction.from;
+    const addressLink = `https://debank.com/profile/${AddressOf}`;
+    const txHashLink = `https://basescan.org/tx/${transaction.hash}`;
+    const chartLink = "https://dexscreener.com/base/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc";
+
+    const txDetailsUrl = `https://api.basescan.org/api?module=account&action=txlistinternal&txhash=${transaction.hash}&apikey=${ETHERSCAN_API_KEY}`;
+    const amountTransferred = Number(transaction.value) / 10 ** tokenDecimals;
+
+    const txDetailsResponse = await axios.get(txDetailsUrl);
+    if (txDetailsResponse.data.status !== "1") {
+      console.error("Failed to retrieve transaction details:", txDetailsResponse.data.message);
+      return;
+    }
         const ethAmount = txDetailsResponse.data.result
           .filter((result) => result.isError === "0")
           .reduce((sum, result) => sum + Number(result.value), 0) / 10 ** 18;
-        const VOID_RANKS = {
-          "VOID Peasant": 1,
-          "VOID Initiate": 1000,
-          "VOID Rookie": 2000,
-          "VOID Novice": 3000,
-          "VOID Learner": 5000,
-          "VOID Follower": 7000,
-          "VOID Apprentice": 8000,
-          "VOID Adept": 9000,
-          "VOID Expert": 10000,
-          "VOID Acolyte": 12500,
-          "VOID Disciple": 15000,
-          "VOID Master": 17500,
-          "VOID Grandmaster": 20000,
-          "VOID Summoner": 22500,
-          "VOID Necromancer": 25000,
-          "VOID Seer": 27500,
-          "VOID Enchanter": 30000,
-          "VOID Sage": 40000,
-          "VOID Shaman": 45000,
-          "VOID Knight": 50000,
-          "VOID Sorcerer": 55000,
-          "VOID Warlock": 60000,
-          "VOID Assassin": 65000,
-          "VOID Archmage": 70000,
-          "VOID Archdruid": 75000,
-          "VOID Conjurer": 80000,
-          "VOID Clairvoyant": 85000,
-          "VOID Alchemist": 95000,
-          "VOID Lord": 100000,
-          "VOID Hierophant": 120000,
-          "VOID Creature": 140000,
-          "VOID Overlord": 150000,
-          "VOID Emperor": 175000,
-          "VOID Evoker": 200000,
-          "VOID Harbinger": 225000,
-          "VOID Guardian": 250000,
-          "VOID Protector": 275000,
-          "VOID Warden": 300000,
-          "VOID Admiral": 325000,
-          "VOID Monarch": 350000,
-          "VOID Sovereign": 400000,
-          "VOID Majesty": 450000,
-          "VOID Transcendent": 500000,
-          "VOID Exalted": 550000,
-          "VOID Celestial": 600000,
-          "VOID Divine": 650000,
-          "VOID Apotheosis": 700000,
-          "VOID Eternity": 750000,
-          "VOID Omnipotence": 800000,
-          "VOID Singularity": 850000,
-          "VOID Absolute": 900000,
-          "VOID Omega": 1000000,
-          "THE VOID": 2000000       
-        };
-        let voidRank = "Void Peasant";
+
         const ethValue = ethAmount.toFixed(6);
 
         const totalSupply = initialSupply - totalBurnedAmount;
@@ -259,7 +207,62 @@ async function detectUniswapLatestTransaction() {
             } else {
               break;
             }
-          }
+          }const VOID_RANKS = {
+            "VOID Peasant": 1,
+            "VOID Initiate": 1000,
+            "VOID Rookie": 2000,
+            "VOID Novice": 3000,
+            "VOID Learner": 5000,
+            "VOID Follower": 7000,
+            "VOID Apprentice": 8000,
+            "VOID Adept": 9000,
+            "VOID Expert": 10000,
+            "VOID Acolyte": 12500,
+            "VOID Disciple": 15000,
+            "VOID Master": 17500,
+            "VOID Grandmaster": 20000,
+            "VOID Summoner": 22500,
+            "VOID Necromancer": 25000,
+            "VOID Seer": 27500,
+            "VOID Enchanter": 30000,
+            "VOID Sage": 40000,
+            "VOID Shaman": 45000,
+            "VOID Knight": 50000,
+            "VOID Sorcerer": 55000,
+            "VOID Warlock": 60000,
+            "VOID Assassin": 65000,
+            "VOID Archmage": 70000,
+            "VOID Archdruid": 75000,
+            "VOID Conjurer": 80000,
+            "VOID Clairvoyant": 85000,
+            "VOID Alchemist": 95000,
+            "VOID Lord": 100000,
+            "VOID Hierophant": 120000,
+            "VOID Creature": 140000,
+            "VOID Overlord": 150000,
+            "VOID Emperor": 175000,
+            "VOID Evoker": 200000,
+            "VOID Harbinger": 225000,
+            "VOID Guardian": 250000,
+            "VOID Protector": 275000,
+            "VOID Warden": 300000,
+            "VOID Admiral": 325000,
+            "VOID Monarch": 350000,
+            "VOID Sovereign": 400000,
+            "VOID Majesty": 450000,
+            "VOID Transcendent": 500000,
+            "VOID Exalted": 550000,
+            "VOID Celestial": 600000,
+            "VOID Divine": 650000,
+            "VOID Apotheosis": 700000,
+            "VOID Eternity": 750000,
+            "VOID Omnipotence": 800000,
+            "VOID Singularity": 850000,
+            "VOID Absolute": 900000,
+            "VOID Omega": 1000000,
+            "THE VOID": 2000000       
+          };
+          let voidRank = "Void Peasant";
           let imageUrl = "";
           switch (voidRank) {
             case "VOID Peasant":
@@ -441,13 +444,16 @@ console.error(
 );
 }
 
-}
+
 } catch (error) {
   if (error.response && error.response.status === 429) {
-    console.error('Etherscan API rate limit reached');
-    setTimeout(detectUniswapLatestTransaction, 40000);
+    console.error('API rate limit reached. Checking Retry-After header.');
+    const retryAfter = error.response.headers['retry-after'];
+    const waitTime = retryAfter ? parseInt(retryAfter, 10) * 1000 : 60000; // Use the Retry-After header if available
+    console.log(`Pausing for ${waitTime / 1000} seconds.`);
+    await sleep(waitTime);
   } else {
-    console.error("Error detecting Uniswap transactions:", error);
+    console.error("Error:", error.message);
   }
 }}
 
@@ -505,8 +511,12 @@ async function detectVoidBurnEvent() {
       saveProcessedTransactions();
     });
   } catch (error) {
-    console.error("Error detecting token burn event:", error);
-  }
+    if (error.response && error.response.status === 429) {
+      console.error('API rate limit reached, pausing for 60 seconds.');
+      await sleep(60000); // Wait for 60 seconds
+    } else {
+      console.error("Error in detectVoidBurnEvent:", error);
+    }}
 }
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -529,5 +539,25 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-setInterval(detectVoidBurnEvent, 10000);
-setInterval(detectUniswapLatestTransaction, 10000);
+let isDetectUniswapTransactionRunning = false;
+setInterval(async () => {
+  if (!isDetectUniswapTransactionRunning) {
+    isDetectUniswapTransactionRunning = true;
+    try {
+      await detectUniswapLatestTransaction();
+    } finally {
+      isDetectUniswapTransactionRunning = false;
+    }
+  }
+}, 10000);
+let isDetectVoidBurnEventRunning = false;
+setInterval(async () => {
+  if (!isDetectVoidBurnEventRunning) {
+    isDetectVoidBurnEventRunning = true;
+    try {
+      await detectVoidBurnEvent();
+    } finally {
+      isDetectVoidBurnEventRunning = false;
+    }
+  }
+}, 10000); // Adjust interval as necessary
