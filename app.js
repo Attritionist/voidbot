@@ -423,7 +423,7 @@ async function detectUniswapLatestTransaction() {
               imageUrl = "https://voidonbase.com/rank54.png";
               break;
             default:
-              imageUrl = "https://voidonbase.com/default.png";
+              imageUrl = "https://voidonbase.com/rank1.png";
               break;
           }
           
