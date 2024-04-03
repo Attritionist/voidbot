@@ -58,7 +58,7 @@ setInterval(async () => {
   if (voidPrice !== null) {
     currentVoidUsdPrice = voidPrice.voidPrice;
   }
-}, 60000);
+}, 30000);
 
 let currentVoidUsdPrice = null;
 
@@ -87,7 +87,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 3000);
+    }, 2000);
   }
 }
 async function sendMessageFromQueue() {
@@ -106,7 +106,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 3000);
+    }, 2000);
   }
 }
 
@@ -115,7 +115,7 @@ async function sendPhotoMessage(photo, options, pinMessage = false) {
 sendMessageFromQueue();
   if (pinMessage) {
     try {
-      await sleep(3000);
+      await sleep(2000);
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
       });
@@ -130,7 +130,7 @@ async function sendAnimationMessage(animation, options, pinMessage = false) {
 
   if (pinMessage) {
     try {
-      await sleep(3000);
+      await sleep(2000);
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
       });
@@ -301,7 +301,7 @@ async function detectUniswapLatestTransaction() {
         const percentBurned = totalBurnedAmount / initialSupply * 100;
         
         const marketCap = voidPrice * totalSupply;
-        const emojiCount = Math.min(Math.ceil(amountTransferred / 10000), 90);
+        const emojiCount = Math.min(Math.ceil(amountTransferred / 5000), 90);
         let emojiString = "";
         for (let i = 0; i < emojiCount; i++) {
           emojiString += isBuy ? "🟣🔥" : "🔴🤡";
@@ -312,6 +312,7 @@ async function detectUniswapLatestTransaction() {
           const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
           const voidRank = getVoidRank(voidBalance);
           const imageUrl = getRankImageUrl(voidRank);  
+          const transactionvalue = amountTransferred.toFixed(2) * voidPrice;
           const message = `${emojiString}\n\n💸 ${
   isBuy ? "Spent" : "Received"
 }: ${ethValue} ${isBuy ? "ETH" : "ETH"}\n💼 ${
@@ -324,9 +325,9 @@ const voidMessageOptions = {
   caption: message,
   parse_mode: "HTML",
 };
-minimumTransactionValueUsd = isBuy ? 200 : 10000000000000;
+minimumTransactionValueUsd = isBuy ? 200 : 10000;
 
-if (transaction.hash === lastProcessedTransactionHash) {
+if (transaction.hash === lastProcessedTransactionHash || transactionvalue < minimumTransactionValueUsd) {
 console.log(`Skipping transaction because of hash}`);
 return;
 } else {
@@ -430,5 +431,5 @@ lastProcessedTransactionHash = transaction.hash;
       console.error("Error updating total burned amount:", error);
     }
   }
-  scheduleNextCall(detectVoidBurnEvent, 30000);
-  scheduleNextCall(detectUniswapLatestTransaction, 5000);
+  scheduleNextCall(detectVoidBurnEvent, 10000);
+  scheduleNextCall(detectUniswapLatestTransaction, 10000);
