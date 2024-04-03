@@ -258,7 +258,7 @@ function getRankImageUrl(voidRank) {
   "THE VOID": "https://voidonbase.com/rank54.png"
   };
 
-  return rankToImageUrlMap[voidRank] || "https://voidonbase.com/default.png";
+  return rankToImageUrlMap[voidRank] || "https://voidonbase.com/rank1.png";
 }
 
 async function detectUniswapLatestTransaction() {
