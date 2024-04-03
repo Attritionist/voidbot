@@ -11,8 +11,8 @@ const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
 const initialSupply = 100000000;
 const burnAnimation = "https://voidonbase.com/burn.gif";
-const BURN_SLEEP_DURATION = 120000;
-const MAX_CONSECUTIVE_NO_TRANSACTIONS = 3;
+const BURN_SLEEP_DURATION = 5000;
+const MAX_CONSECUTIVE_NO_TRANSACTIONS = 10;
 let consecutiveNoBurn = 0;
 const fs = require("fs");
 const processedTransactionsFilePath = "processed_transactions.json";
@@ -319,7 +319,7 @@ return;
 
 } else {
 if (!isBuy) {
-  minimumTransactionValueUsd = 10000; // Minimum threshold for buy transactions
+  minimumTransactionValueUsd = 5000; // Minimum threshold for buy transactions
 } else {
   minimumTransactionValueUsd = 200; // Minimum threshold for sell transactions
 }
@@ -429,5 +429,5 @@ lastProcessedTransactionHash = transaction.hash;
       console.error("Error updating total burned amount:", error);
     }
   }
-  scheduleNextCall(detectVoidBurnEvent, 60000);
-  scheduleNextCall(detectUniswapLatestTransaction, 5000);
+  scheduleNextCall(detectVoidBurnEvent, 45000);
+  scheduleNextCall(detectUniswapLatestTransaction, 7500);
