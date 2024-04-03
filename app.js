@@ -11,8 +11,8 @@ const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
 const initialSupply = 100000000;
 const burnAnimation = "https://voidonbase.com/burn.gif";
-const BURN_SLEEP_DURATION = 90000;
-const MAX_CONSECUTIVE_NO_TRANSACTIONS = 5;
+const BURN_SLEEP_DURATION = 120000;
+const MAX_CONSECUTIVE_NO_TRANSACTIONS = 3;
 let consecutiveNoBurn = 0;
 const fs = require("fs");
 const processedTransactionsFilePath = "processed_transactions.json";
@@ -87,7 +87,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 3000);
+    }, 5000);
   }
 }
 async function sendMessageFromQueue() {
@@ -106,38 +106,19 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 3000);
+    }, 5000);
   }
 }
+let minimumTransactionValueUsd = 0;
 
-async function sendPhotoMessage(photo, options, pinMessage = false) {
+async function sendPhotoMessage(photo, options) {
   addToMessageQueue({ photo, options });
-sendMessageFromQueue();
-  if (pinMessage) {
-    try {
-      await sleep(2000);
-      await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
-        disable_notification: true 
-      });
-    } catch (error) {
-      console.error("Error pinning message:", error);
-    }
+sendMessageFromQueue(); 
   }
-}
-async function sendAnimationMessage(animation, options, pinMessage = false) {
+
+async function sendAnimationMessage(animation, options) {
   addToBurnQueue({ animation, options });
   sendBurnFromQueue();
-
-  if (pinMessage) {
-    try {
-      await sleep(2000);
-      await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
-        disable_notification: true 
-      });
-    } catch (error) {
-      console.error("Error pinning message:", error);
-    }
-  }
 }
 let lastProcessedTransactionHash = null;
 
@@ -318,25 +299,37 @@ async function detectUniswapLatestTransaction() {
 💸 ${isBuy ? "Spent" : "Received"}: ${isBuy ? ethValue : ethValue / 2} ETH
 💼 ${isBuy
   ? `Bought ${amountTransferred.toFixed(2)} VOID (<a href="${addressLink}">View Address</a>)`
-  : `Sold ${amountTransferred.toFixed(3)} VOID (<a href="${addressLink}">View Address</a>)`}
+  : `Sold ${amountTransferred.toFixed(2)} VOID (<a href="${addressLink}">View Address</a>)`}
 🟣 VOID Price: $${voidPrice}
 💰 Market Cap: $${marketCap.toFixed(2)}
 🔥 Percent Burned: ${percentBurned.toFixed(2)}%
 <a href="${chartLink}">📈 Chart</a>
 <a href="${txHashLink}">💱 TX Hash</a>
-⚖️ Remaining VOID Balance: ${voidBalance}
+⚖️ Remaining VOID Balance: ${voidBalance.toFixed(3)}
 🛡️ VOID Rank: ${voidRank}`;
 const voidMessageOptions = {
   caption: message,
   parse_mode: "HTML",
 };
-minimumTransactionValueUsd = isBuy ? 250 : 5000;
 
-if (transaction.hash === lastProcessedTransactionHash || transactionvalue < minimumTransactionValueUsd) {
+
+if (transaction.hash === lastProcessedTransactionHash ) {
 console.log(`Skipping transaction because of hash}`);
 return;
+
 } else {
-sendPhotoMessage(imageUrl, voidMessageOptions, false);
+if (!isBuy) {
+  minimumTransactionValueUsd = 10000; // Minimum threshold for buy transactions
+} else {
+  minimumTransactionValueUsd = 200; // Minimum threshold for sell transactions
+}
+
+if (transactionvalue < minimumTransactionValueUsd) {
+  console.log(`Skipping transaction below minimum threshold: $${minimumTransactionValueUsd}`);
+  return;
+}
+
+sendPhotoMessage(imageUrl, voidMessageOptions);
 lastProcessedTransactionHash = transaction.hash;
           console.log("Latest transaction:", transaction);
         } }
@@ -346,7 +339,7 @@ lastProcessedTransactionHash = transaction.hash;
     } catch (error) {
       if (error.response && error.response.status === 429) {
         console.error('API rate limit reached, pausing for 60 seconds.');
-        await sleep(120000);
+        await sleep(60000);
       } else {
         console.error("Error in detectUniswapLatestTransaction:", error);
       }
@@ -400,7 +393,7 @@ lastProcessedTransactionHash = transaction.hash;
           caption: burnMessage,
           parse_mode: "HTML",
         };
-        sendAnimationMessage(burnAnimation, burnanimationMessageOptions, true);
+        sendAnimationMessage(burnAnimation, burnanimationMessageOptions);
   
         saveProcessedTransactions();
       });
@@ -436,5 +429,5 @@ lastProcessedTransactionHash = transaction.hash;
       console.error("Error updating total burned amount:", error);
     }
   }
-  scheduleNextCall(detectVoidBurnEvent, 30000);
+  scheduleNextCall(detectVoidBurnEvent, 60000);
   scheduleNextCall(detectUniswapLatestTransaction, 15000);
