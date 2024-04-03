@@ -16,7 +16,7 @@ const initialSupply = 100000000;
 async function getVoidPrice() {
   try {
     const response = await axios.get(
-      `https://pro-api.coingecko.com/api/v3/onchain/simple/networks/base/token_price/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc?x_cg_pro_api_key=${COINGECKO_API_KEY}`
+      `https://pro-api.coingecko.com/api/v3/onchain/simple/networks/base/token_price/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc?x_cg_pro_api_key=${COINGECKO_API}`
     );
     const tokenAddress = '0x21eceaf3bf88ef0797e3927d855ca5bb569a47fc'.toLowerCase();
     const voidPrice = response.data.data.attributes.token_prices[tokenAddress];
