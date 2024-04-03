@@ -247,7 +247,7 @@ async function detectUniswapLatestTransaction() {
     if (response.data.status !== "1") {
       throw new Error("Failed to retrieve latest Uniswap transaction");
     }
-
+    const voidPrice = currentVoidUsdPrice;
     const transaction = response.data.result[0];
       const isBuy =
       transaction.from.toLowerCase() === POOL_CONTRACT.toLowerCase();
