@@ -11,7 +11,7 @@ const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
 const initialSupply = 100000000;
 const burnAnimation = "https://voidonbase.com/burn.gif";
-const BURN_SLEEP_DURATION = 30000;
+const BURN_SLEEP_DURATION = 60000;
 const MAX_CONSECUTIVE_NO_TRANSACTIONS = 5;
 let consecutiveNoBurn = 0;
 const fs = require("fs");
@@ -58,7 +58,7 @@ setInterval(async () => {
   if (voidPrice !== null) {
     currentVoidUsdPrice = voidPrice.voidPrice;
   }
-}, 30000);
+}, 60000);
 
 let currentVoidUsdPrice = null;
 
@@ -87,7 +87,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2000);
+    }, 3000);
   }
 }
 async function sendMessageFromQueue() {
@@ -106,7 +106,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2000);
+    }, 3000);
   }
 }
 
@@ -436,5 +436,5 @@ lastProcessedTransactionHash = transaction.hash;
       console.error("Error updating total burned amount:", error);
     }
   }
-  scheduleNextCall(detectVoidBurnEvent, 10000);
-  scheduleNextCall(detectUniswapLatestTransaction, 10000);
+  scheduleNextCall(detectVoidBurnEvent, 20000);
+  scheduleNextCall(detectUniswapLatestTransaction, 15000);
