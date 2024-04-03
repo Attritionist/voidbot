@@ -58,7 +58,7 @@ setInterval(async () => {
   if (voidPrice !== null) {
     currentVoidUsdPrice = voidPrice.voidPrice;
   }
-}, 60000);
+}, 30000);
 
 let currentVoidUsdPrice = null;
 
@@ -87,7 +87,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 3000);
+    }, 2000);
   }
 }
 async function sendMessageFromQueue() {
@@ -106,7 +106,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 3000);
+    }, 2000);
   }
 }
 
@@ -115,7 +115,7 @@ async function sendPhotoMessage(photo, options, pinMessage = false) {
 sendMessageFromQueue();
   if (pinMessage) {
     try {
-      await sleep(1000);
+      await sleep(2000);
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
       });
@@ -130,7 +130,7 @@ async function sendAnimationMessage(animation, options, pinMessage = false) {
 
   if (pinMessage) {
     try {
-      await sleep(1000);
+      await sleep(2000);
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
         disable_notification: true 
       });
@@ -313,14 +313,19 @@ async function detectUniswapLatestTransaction() {
           const voidRank = getVoidRank(voidBalance);
           const imageUrl = getRankImageUrl(voidRank);  
           const transactionvalue = amountTransferred * voidPrice;
-          const message = `${emojiString}\n\n💸 ${
-  isBuy ? "Spent" : "Received"
-}: ${ethValue} ${isBuy ? "ETH" : "ETH"}\n💼 ${
-  isBuy
-    ? `Bought ${amountTransferred.toFixed(2)} VOID (<a href="${addressLink}">View Address</a>)`
-    : `Sold ${amountTransferred.toFixed(3)} VOID (<a href="${addressLink}">View Address</a>)`
-}\n🟣 VOID Price: $${voidPrice}\n💰 Market Cap: $${marketCap.toFixed(2)}\n🔥 Percent Burned: ${percentBurned.toFixed(2)}%\n<a href="${chartLink}">📈 Chart</a>\n<a href="${txHashLink}">💱 TX Hash</a>\n⚖️ Remaining VOID Balance: ${voidBalance}\n🛡️ VOID Rank: ${voidRank}`;
+          const message = `${emojiString}
 
+💸 ${isBuy ? "Spent" : "Received"}: ${isBuy ? ethValue : ethValue / 2} ETH
+💼 ${isBuy
+  ? `Bought ${amountTransferred.toFixed(2)} VOID (<a href="${addressLink}">View Address</a>)`
+  : `Sold ${amountTransferred.toFixed(3)} VOID (<a href="${addressLink}">View Address</a>)`}
+🟣 VOID Price: $${voidPrice}
+💰 Market Cap: $${marketCap.toFixed(2)}
+🔥 Percent Burned: ${percentBurned.toFixed(2)}%
+<a href="${chartLink}">📈 Chart</a>
+<a href="${txHashLink}">💱 TX Hash</a>
+⚖️ Remaining VOID Balance: ${voidBalance}
+🛡️ VOID Rank: ${voidRank}`;
 const voidMessageOptions = {
   caption: message,
   parse_mode: "HTML",
@@ -340,8 +345,8 @@ lastProcessedTransactionHash = transaction.hash;
     
     } catch (error) {
       if (error.response && error.response.status === 429) {
-        console.error('API rate limit reached, pausing for 61 seconds.');
-        await sleep(61000);
+        console.error('API rate limit reached, pausing for 60 seconds.');
+        await sleep(60000);
       } else {
         console.error("Error in detectUniswapLatestTransaction:", error);
       }
@@ -431,5 +436,5 @@ lastProcessedTransactionHash = transaction.hash;
       console.error("Error updating total burned amount:", error);
     }
   }
-  scheduleNextCall(detectVoidBurnEvent, 30000);
-  scheduleNextCall(detectUniswapLatestTransaction, 5000);
+  scheduleNextCall(detectVoidBurnEvent, 10000);
+  scheduleNextCall(detectUniswapLatestTransaction, 10000);
