@@ -8,14 +8,10 @@ const ETHERSCAN_API_KEY = process.env["ETHERSCAN_API_KEY"];
 const TOKEN_CONTRACT = process.env["TOKEN_CONTRACT"];
 const POOL_CONTRACT = process.env["POOL_CONTRACT"];
 const COINGECKO_API = process.env["COINGECKO_API"];
-
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
 const initialSupply = 100000000;
 const burnAnimation = "https://voidonbase.com/burn.gif";
-const BURN_SLEEP_DURATION = 5000;
-const MAX_CONSECUTIVE_NO_TRANSACTIONS = 10;
-let consecutiveNoBurn = 0;
 const fs = require("fs");
 const processedTransactionsFilePath = "processed_transactions.json";
 let processedTransactions = new Set();
@@ -298,9 +294,9 @@ async function detectUniswapLatestTransaction() {
 💸 ${isBuy ? "Spent" : "Received"}: ${isBuy ? ethValue : ethValue / 2} ETH
 💼 ${isBuy
   ? `Bought ${amountTransferred.toFixed(2)} VOID (<a href="${addressLink}">View Address</a>)`
-  : `Sold ${amountTransferred.toFixed(3)} VOID (<a href="${addressLink}">View Address</a>)`}
-🟣 VOID Price: $${voidPrice.toFixed(3)}
-💰 Market Cap: $${marketCap.toFixed(1)}
+  : `Sold ${amountTransferred.toFixed(2)} VOID (<a href="${addressLink}">View Address</a>)`}
+🟣 VOID Price: $${voidPrice.toFixed(5)}
+💰 Market Cap: $${marketCap.toFixed(0)}
 🔥 Percent Burned: ${percentBurned.toFixed(3)}%
 <a href="${chartLink}">📈 Chart</a>
 <a href="${txHashLink}">💱 TX Hash</a>
@@ -331,12 +327,7 @@ lastProcessedTransactionHash = transaction.hash;
           if (response.data.status !== "1") {
             throw new Error("Failed to retrieve token transactions");
           }
-      if (consecutiveNoBurn >= MAX_CONSECUTIVE_NO_TRANSACTIONS) {
-        console.log(`No new burn events detected. Sleeping for ${BURN_SLEEP_DURATION / 1000} seconds...`);
-        await sleep(BURN_SLEEP_DURATION);
-        consecutiveNoBurn = 0;
-      }
-  
+
       await updateTotalBurnedAmount();
   
       const newBurnEvents = response.data.result.filter(
@@ -348,10 +339,8 @@ lastProcessedTransactionHash = transaction.hash;
   
       if (newBurnEvents.length === 0) {
         console.log("No new burn events detected.");
-        consecutiveNoBurn++;
         return;
       }
-      consecutiveNoBurn = 0; 
   
       newBurnEvents.forEach((transaction) => {
         processedTransactions.add(transaction.hash);
@@ -388,9 +377,6 @@ lastProcessedTransactionHash = transaction.hash;
         });
     }, delay);
   }
-  function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
   let totalBurnedAmount = 0;
   let totalBurnedAmountt = 0;
   
@@ -409,5 +395,5 @@ lastProcessedTransactionHash = transaction.hash;
       console.error("Error updating total burned amount:", error);
     }
   }
-  scheduleNextCall(detectVoidBurnEvent, 4000);
+  scheduleNextCall(detectVoidBurnEvent, 3000);
   scheduleNextCall(detectUniswapLatestTransaction, 2000);
