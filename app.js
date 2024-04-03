@@ -312,7 +312,7 @@ async function detectUniswapLatestTransaction() {
           const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
           const voidRank = getVoidRank(voidBalance);
           const imageUrl = getRankImageUrl(voidRank);  
-          const transactionvalue = amountTransferred.toFixed(2) * voidPrice;
+          const transactionvalue = amountTransferred * voidPrice;
           const message = `${emojiString}\n\n💸 ${
   isBuy ? "Spent" : "Received"
 }: ${ethValue} ${isBuy ? "ETH" : "ETH"}\n💼 ${
