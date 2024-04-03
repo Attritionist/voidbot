@@ -11,7 +11,7 @@ const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
 const initialSupply = 100000000;
 const burnAnimation = "https://voidonbase.com/burn.gif";
-const BURN_SLEEP_DURATION = 60000;
+const BURN_SLEEP_DURATION = 90000;
 const MAX_CONSECUTIVE_NO_TRANSACTIONS = 5;
 let consecutiveNoBurn = 0;
 const fs = require("fs");
@@ -58,7 +58,7 @@ setInterval(async () => {
   if (voidPrice !== null) {
     currentVoidUsdPrice = voidPrice.voidPrice;
   }
-}, 60000);
+}, 120000);
 
 let currentVoidUsdPrice = null;
 
@@ -301,7 +301,7 @@ async function detectUniswapLatestTransaction() {
         const percentBurned = totalBurnedAmount / initialSupply * 100;
         
         const marketCap = voidPrice * totalSupply;
-        const emojiCount = Math.min(Math.ceil(amountTransferred / 5000), 90);
+        const emojiCount = Math.min(Math.ceil(amountTransferred / 7000), 96);
         let emojiString = "";
         for (let i = 0; i < emojiCount; i++) {
           emojiString += isBuy ? "🟣🔥" : "🔴🤡";
@@ -330,7 +330,7 @@ const voidMessageOptions = {
   caption: message,
   parse_mode: "HTML",
 };
-minimumTransactionValueUsd = isBuy ? 200 : 10000;
+minimumTransactionValueUsd = isBuy ? 250 : 5000;
 
 if (transaction.hash === lastProcessedTransactionHash || transactionvalue < minimumTransactionValueUsd) {
 console.log(`Skipping transaction because of hash}`);
@@ -346,7 +346,7 @@ lastProcessedTransactionHash = transaction.hash;
     } catch (error) {
       if (error.response && error.response.status === 429) {
         console.error('API rate limit reached, pausing for 60 seconds.');
-        await sleep(60000);
+        await sleep(120000);
       } else {
         console.error("Error in detectUniswapLatestTransaction:", error);
       }
@@ -436,5 +436,5 @@ lastProcessedTransactionHash = transaction.hash;
       console.error("Error updating total burned amount:", error);
     }
   }
-  scheduleNextCall(detectVoidBurnEvent, 20000);
+  scheduleNextCall(detectVoidBurnEvent, 30000);
   scheduleNextCall(detectUniswapLatestTransaction, 15000);
