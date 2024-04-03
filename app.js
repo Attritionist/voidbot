@@ -247,13 +247,12 @@ async function detectUniswapLatestTransaction() {
       throw new Error("Failed to retrieve latest Uniswap transaction");
     }
     const newTransactions = response.data.result.filter(
-      (transaction) => !lastProcessedTransactionHash.has(transaction.hash)
+      (transaction) => transaction.hash !== lastProcessedTransactionHash
     );
     if (newTransactions.length === 0) {
       console.log("No new transactions detected.");
       return;
     }
-
     const voidPrice = currentVoidUsdPrice;
     const transaction = response.data.result[0];
       const isBuy =
@@ -314,7 +313,7 @@ console.log(`Skipping transaction because of Price`);
 return;
 }
 lastProcessedTransactionHash = transaction.hash;
-
+console.log("Latest transaction processed:", transaction);
 sendPhotoMessage(imageUrl, voidMessageOptions);
         } }
     
