@@ -59,7 +59,7 @@ setInterval(async () => {
     currentVoidUsdPrice = priceInfo.voidPrice;
     console.log(`Updated current VOID USD price to: ${currentVoidUsdPrice}`);
   }
-}, 20000);
+}, 30000);
 
 let currentVoidUsdPrice = null;
 
@@ -276,7 +276,7 @@ async function detectUniswapLatestTransaction() {
         const totalSupply = initialSupply - totalBurnedAmount;
 
         const percentBurned = totalBurnedAmount / initialSupply * 100;
-        
+        const transactionvalue = amountTransferred.toFixed(2) * voidPrice.toFixed(5)
         const marketCap = voidPrice * totalSupply;
         const emojiCount = Math.min(Math.ceil(amountTransferred / 5000), 90);
         let emojiString = "";
@@ -293,21 +293,22 @@ async function detectUniswapLatestTransaction() {
 
 💸 ${isBuy ? "Spent" : "Received"}: ${isBuy ? ethValue : ethValue / 2} ETH
 💼 ${isBuy
-  ? `Bought ${amountTransferred.toFixed(2)} VOID (<a href="${addressLink}">View Address</a>)`
-  : `Sold ${amountTransferred.toFixed(2)} VOID (<a href="${addressLink}">View Address</a>)`}
+  ? `Bought ${amountTransferred.toFixed(2)} VOID ($${transactionvalue})  (<a href="${addressLink}">View Address</a>)`
+  : `Sold ${amountTransferred.toFixed(2)} VOID ($${transactionvalue}) (<a href="${addressLink}">View Address</a>)`}
 🟣 VOID Price: $${voidPrice.toFixed(5)}
 💰 Market Cap: $${marketCap.toFixed(0)}
 🔥 Percent Burned: ${percentBurned.toFixed(3)}%
 <a href="${chartLink}">📈 Chart</a>
 <a href="${txHashLink}">💱 TX Hash</a>
-⚖️ Remaining VOID Balance: ${voidBalance}
+⚖️ Remaining VOID Balance: ${voidBalance.toFixed(5)}
 🛡️ VOID Rank: ${voidRank}`;
 const voidMessageOptions = {
   caption: message,
   parse_mode: "HTML",
 };
+minimumTransactionValueUsd = isBuy ? 200 : 10000;
 
-if (transaction.hash === lastProcessedTransactionHash || currentVoidUsdPrice === null) {
+if (transaction.hash === lastProcessedTransactionHash || currentVoidUsdPrice === null || transactionvalue < minimumTransactionValueUsd) {
 console.log(`Skipping transaction because of hash}`);
 return;
 } 
