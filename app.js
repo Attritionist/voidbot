@@ -10,34 +10,6 @@ const POOL_CONTRACT = process.env["POOL_CONTRACT"];
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
 const initialSupply = 100000000;
-const burnAnimation = "https://voidonbase.com/burn.gif";
-const fs = require("fs");
-const processedTransactionsFilePath = "processed_transactions.json";
-let processedTransactions = new Set();
-if (fs.existsSync(processedTransactionsFilePath)) {
-  const data = fs.readFileSync(processedTransactionsFilePath, "utf-8");
-  if (data.trim()) {
-    try {
-      const parsedData = JSON.parse(data);
-      if (Array.isArray(parsedData)) {
-        processedTransactions = new Set(parsedData);
-      } else {
-        throw new Error("Data read from file is not in the expected format");
-      }
-    } catch (error) {
-      console.error("Error parsing processed transactions data:", error);
-    }
-  }
-}
-
-function saveProcessedTransactions() {
-  try {
-    const data = JSON.stringify(Array.from(processedTransactions));
-    fs.writeFileSync(processedTransactionsFilePath, data, "utf-8");
-  } catch (error) {
-    console.error("Error saving processed transactions to file:", error);
-  }
-}
 async function getVoidPrice() {
   try {
     const response = await axios.get(
@@ -65,28 +37,6 @@ let isSendingMessage = false;
 function addToMessageQueue(message) {
   messageQueue.push(message);
 }
-function addToBurnQueue(message) {
-  messageQueue.push(message);
-}
-async function sendBurnFromQueue() {
-  if (messageQueue.length > 0 && !isSendingMessage) {
-    isSendingMessage = true;
-    const message = messageQueue.shift();
-    try {
-      await bot.sendAnimation(
-        TELEGRAM_CHAT_ID,
-        message.animation,
-        message.options
-      );
-    } catch (error) {
-      console.error("Error sending message:", error);
-    }
-    setTimeout(() => {
-      isSendingMessage = false;
-      sendMessageFromQueue();
-    }, 2500);
-  }
-}
 async function sendMessageFromQueue() {
   if (messageQueue.length > 0 && !isSendingMessage) {
     isSendingMessage = true;
@@ -103,7 +53,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2500);
+    }, 2000);
   }
 }
 
@@ -112,10 +62,6 @@ async function sendPhotoMessage(photo, options) {
 sendMessageFromQueue(); 
   }
 
-async function sendAnimationMessage(animation, options) {
-  addToBurnQueue({ animation, options });
-  sendBurnFromQueue();
-}
 let lastProcessedTransactionHash = null;
 
 function getVoidRank(voidBalance) {
@@ -246,6 +192,8 @@ async function detectUniswapLatestTransaction() {
     if (response.data.status !== "1") {
       throw new Error("Failed to retrieve latest Uniswap transaction");
     }
+    await updateTotalBurnedAmount();
+
     const newTransactions = response.data.result.filter(
       (transaction) => transaction.hash !== lastProcessedTransactionHash
     );
@@ -326,68 +274,7 @@ sendPhotoMessage(imageUrl, voidMessageOptions);
       }
     }
   } 
-  function scheduleNextCall(callback, delay) {
-    setTimeout(() => {
-        callback().finally(() => {
-            scheduleNextCall(callback, delay);
-        });
-    }, delay);
-  }
-  async function detectVoidBurnEvent() {
-    try {  const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
-          const response = await axios.get(apiUrl); 
-          if (response.data.status !== "1") {
-            throw new Error("Failed to retrieve token transactions");
-          }
-      await updateTotalBurnedAmount();
-  
-      const newBurnEvents = response.data.result.filter(
-        (transaction) =>
-          transaction.to.toLowerCase() ===
-            "0x0000000000000000000000000000000000000000" &&
-          !processedTransactions.has(transaction.hash)
-      );
-  
-      if (newBurnEvents.length === 0) {
-        console.log("No new burn events detected.");
-        return;
-      }
-  
-      newBurnEvents.forEach((transaction) => {
-        processedTransactions.add(transaction.hash);
-        const amountBurned =
-          Number(transaction.value) / 10 ** tokenDecimals;
-        const txHash = transaction.hash;
-        const txHashLink = `https://basescan.org/tx/${txHash}`;
-        const chartLink = "https://dexscreener.com/base/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc";
-        const percentBurned =
-          ((initialSupply - totalBurnedAmountt) / initialSupply) * 100;
-          totalBurnedAmountt += amountBurned;
-        const burnMessage = `VOID Burned!\n\n💀💀💀💀💀\n🔥 Burned: ${amountBurned.toFixed(
-          3
-        )} VOID\nPercent Burned: ${percentBurned.toFixed(
-          2
-        )}%\n🔎 <a href="${chartLink}">Chart</a> | <a href="${txHashLink}">TX Hash</a>`;
-  
-        const burnanimationMessageOptions = {
-          caption: burnMessage,
-          parse_mode: "HTML",
-        };
-        sendAnimationMessage(burnAnimation, burnanimationMessageOptions);
-  
-        saveProcessedTransactions();
-      });
-    } catch (error) {
-      console.error("Error detecting token burn event:", error);
-    }
-  }
 
-  function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-  let totalBurnedAmount = 0;
-  let totalBurnedAmountt = 0;
-  
   async function updateTotalBurnedAmount() {
     try {
       const apiUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&apikey=${ETHERSCAN_API_KEY}`;
@@ -403,5 +290,4 @@ sendPhotoMessage(imageUrl, voidMessageOptions);
       console.error("Error updating total burned amount:", error);
     }
   }
-  scheduleNextCall(detectVoidBurnEvent, 15000);
-  scheduleNextCall(detectUniswapLatestTransaction, 10000);
+  setInterval(detectUniswapLatestTransaction, 12000);
