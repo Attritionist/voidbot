@@ -12,23 +12,26 @@ const COINGECKO_API = process.env["COINGECKO_API"];
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
 const initialSupply = 100000000;
+
 async function getVoidPrice() {
   try {
     const response = await axios.get(
-      `https://pro-api.coingecko.com/api/v3/onchain/simple/networks/base/token_price/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc?x_cg_pro_api_key=${COINGECKO_API}`
-
+      `https://pro-api.coingecko.com/api/v3/onchain/simple/networks/base/token_price/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc?x_cg_pro_api_key=${COINGECKO_API_KEY}`
     );
-    const voidPrice = response.data["the-void"].usd;
-    return { voidPrice };
+    const tokenAddress = '0x21eceaf3bf88ef0797e3927d855ca5bb569a47fc'.toLowerCase();
+    const voidPrice = response.data.data.attributes.token_prices[tokenAddress];
+    return { voidPrice: parseFloat(voidPrice) };
   } catch (error) {
     console.error("Error fetching crypto prices:", error);
     return null;
   }
 }
+
 setInterval(async () => {
-  const voidPrice = await getVoidPrice();
-  if (voidPrice !== null) {
-    currentVoidUsdPrice = voidPrice.voidPrice;
+  const priceInfo = await getVoidPrice();
+  if (priceInfo !== null) {
+    currentVoidUsdPrice = priceInfo.voidPrice;
+    console.log(`Updated current VOID USD price to: ${currentVoidUsdPrice}`);
   }
 }, 45000);
 
@@ -189,22 +192,19 @@ function getRankImageUrl(voidRank) {
 
 async function detectUniswapLatestTransaction() {
   try {
+    if (currentVoidUsdPrice === null) {
+      console.log("Waiting for VOID price data...");
+      return;
+    }
+    const voidPrice = currentVoidUsdPrice;
+
     const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=${POOL_CONTRACT}&page=1&offset=1&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
     const response = await axios.get(apiUrl);
 
     if (response.data.status !== "1") {
       throw new Error("Failed to retrieve latest Uniswap transaction");
     }
-    await updateTotalBurnedAmount();
 
-    const newTransactions = response.data.result.filter(
-      (transaction) => transaction.hash !== lastProcessedTransactionHash
-    );
-    if (newTransactions.length === 0) {
-      console.log("No new transactions detected.");
-      return;
-    }
-    const voidPrice = currentVoidUsdPrice;
     const transaction = response.data.result[0];
       const isBuy =
       transaction.from.toLowerCase() === POOL_CONTRACT.toLowerCase();
@@ -223,7 +223,7 @@ async function detectUniswapLatestTransaction() {
         const ethAmount = txDetailsResponse.data.result
           .filter((result) => result.isError === "0")
           .reduce((sum, result) => sum + Number(result.value), 0) / 10 ** 18;  
-        const ethValue = ethAmount.toFixed(4);
+        const ethValue = ethAmount.toFixed(6);
 
         const totalSupply = initialSupply - totalBurnedAmount;
 
@@ -241,6 +241,7 @@ async function detectUniswapLatestTransaction() {
           const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
           const voidRank = getVoidRank(voidBalance);
           const imageUrl = getRankImageUrl(voidRank);  
+          const transactionvalue = amountTransferred * voidPrice;
           const message = `${emojiString}
 
 💸 ${isBuy ? "Spent" : "Received"}: ${isBuy ? ethValue : ethValue / 2} ETH
@@ -259,14 +260,29 @@ const voidMessageOptions = {
   parse_mode: "HTML",
 };
 
-if (currentVoidUsdPrice === null) {
-console.log(`Skipping transaction because of Price`);
+
+if (transaction.hash === lastProcessedTransactionHash ) {
+console.log(`Skipping transaction because of hash}`);
 return;
+
+} else {
+if (!isBuy) {
+  minimumTransactionValueUsd = 5000; // Minimum threshold for buy transactions
+} else {
+  minimumTransactionValueUsd = 200; // Minimum threshold for sell transactions
 }
-lastProcessedTransactionHash = transaction.hash;
-console.log("Latest transaction processed:", transaction);
+
+if (transactionvalue < minimumTransactionValueUsd) {
+  console.log(`Skipping transaction below minimum threshold: $${minimumTransactionValueUsd}`);
+  return;
+}
+
 sendPhotoMessage(imageUrl, voidMessageOptions);
+lastProcessedTransactionHash = transaction.hash;
+          console.log("Latest transaction:", transaction);
         } }
+
+        }
     
     } catch (error) {
       if (error.response && error.response.status === 429) {
@@ -276,7 +292,7 @@ sendPhotoMessage(imageUrl, voidMessageOptions);
         console.error("Error in detectUniswapLatestTransaction:", error);
       }
     }
-  } 
+  }
 
   async function updateTotalBurnedAmount() {
     try {
@@ -294,3 +310,5 @@ sendPhotoMessage(imageUrl, voidMessageOptions);
     }
   }
   setInterval(detectUniswapLatestTransaction, 12000);
+  setInterval(updateTotalBurnedAmount, 36000);
+
