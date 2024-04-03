@@ -87,7 +87,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 5000);
+    }, 2000);
   }
 }
 async function sendMessageFromQueue() {
@@ -106,7 +106,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 5000);
+    }, 2000);
   }
 }
 let minimumTransactionValueUsd = 0;
@@ -430,4 +430,4 @@ lastProcessedTransactionHash = transaction.hash;
     }
   }
   scheduleNextCall(detectVoidBurnEvent, 60000);
-  scheduleNextCall(detectUniswapLatestTransaction, 15000);
+  scheduleNextCall(detectUniswapLatestTransaction, 5000);
