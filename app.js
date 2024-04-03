@@ -11,9 +11,6 @@ const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
 const initialSupply = 100000000;
 const burnAnimation = "https://voidonbase.com/burn.gif";
-const BURN_SLEEP_DURATION = 10000;
-const MAX_CONSECUTIVE_NO_TRANSACTIONS = 7;
-let consecutiveNoBurn = 0;
 const fs = require("fs");
 const processedTransactionsFilePath = "processed_transactions.json";
 let processedTransactions = new Set();
@@ -58,7 +55,7 @@ setInterval(async () => {
   if (voidPrice !== null) {
     currentVoidUsdPrice = voidPrice.voidPrice;
   }
-}, 60000);
+}, 45000);
 
 let currentVoidUsdPrice = null;
 
@@ -87,7 +84,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2000);
+    }, 2500);
   }
 }
 async function sendMessageFromQueue() {
@@ -106,10 +103,9 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2000);
+    }, 2500);
   }
 }
-let minimumTransactionValueUsd = 0;
 
 async function sendPhotoMessage(photo, options) {
   addToMessageQueue({ photo, options });
@@ -244,11 +240,6 @@ function getRankImageUrl(voidRank) {
 
 async function detectUniswapLatestTransaction() {
   try {
-    if (currentVoidUsdPrice === null) {
-      console.log("Waiting for VOID price data...");
-      return;
-    }
-    const voidPrice = currentVoidUsdPrice;
 
     const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=${POOL_CONTRACT}&page=1&offset=1&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
     const response = await axios.get(apiUrl);
@@ -312,29 +303,16 @@ const voidMessageOptions = {
   parse_mode: "HTML",
 };
 
-
-if (transaction.hash === lastProcessedTransactionHash ) {
-console.log(`Skipping transaction because of hash}`);
+if (transaction.hash === lastProcessedTransactionHash || currentVoidUsdPrice === null || 
+  (transactionvalue < (isBuy ? 200 : 5000))) {
+console.log(`Skipping transaction because of hash OR Price`);
 return;
-
-} else {
-if (!isBuy) {
-  minimumTransactionValueUsd = 5000; // Minimum threshold for buy transactions
-} else {
-  minimumTransactionValueUsd = 200; // Minimum threshold for sell transactions
-}
-
-if (transactionvalue < minimumTransactionValueUsd) {
-  console.log(`Skipping transaction below minimum threshold: $${minimumTransactionValueUsd}`);
-  return;
 }
 
 sendPhotoMessage(imageUrl, voidMessageOptions);
 lastProcessedTransactionHash = transaction.hash;
           console.log("Latest transaction:", transaction);
         } }
-
-        }
     
     } catch (error) {
       if (error.response && error.response.status === 429) {
@@ -344,6 +322,13 @@ lastProcessedTransactionHash = transaction.hash;
         console.error("Error in detectUniswapLatestTransaction:", error);
       }
     }
+  } 
+  function scheduleNextCall(callback, delay) {
+    setTimeout(() => {
+        callback().finally(() => {
+            scheduleNextCall(callback, delay);
+        });
+    }, delay);
   }
   async function detectVoidBurnEvent() {
     try {  const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
@@ -351,12 +336,6 @@ lastProcessedTransactionHash = transaction.hash;
           if (response.data.status !== "1") {
             throw new Error("Failed to retrieve token transactions");
           }
-      if (consecutiveNoBurn >= MAX_CONSECUTIVE_NO_TRANSACTIONS) {
-        console.log(`No new burn events detected. Sleeping for ${BURN_SLEEP_DURATION / 1000} seconds...`);
-        await sleep(BURN_SLEEP_DURATION);
-        consecutiveNoBurn = 0;
-      }
-  
       await updateTotalBurnedAmount();
   
       const newBurnEvents = response.data.result.filter(
@@ -368,10 +347,8 @@ lastProcessedTransactionHash = transaction.hash;
   
       if (newBurnEvents.length === 0) {
         console.log("No new burn events detected.");
-        consecutiveNoBurn++;
         return;
       }
-      consecutiveNoBurn = 0; 
   
       newBurnEvents.forEach((transaction) => {
         processedTransactions.add(transaction.hash);
@@ -401,13 +378,7 @@ lastProcessedTransactionHash = transaction.hash;
       console.error("Error detecting token burn event:", error);
     }
   }
-  function scheduleNextCall(callback, delay) {
-    setTimeout(() => {
-        callback().finally(() => {
-            scheduleNextCall(callback, delay);
-        });
-    }, delay);
-  }
+
   function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
