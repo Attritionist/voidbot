@@ -12,7 +12,37 @@ const COINGECKO_API = process.env["COINGECKO_API"];
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
 const initialSupply = 100000000;
+const burnAnimation = "https://voidonbase.com/burn.gif";
+const BURN_SLEEP_DURATION = 10000;
+const MAX_CONSECUTIVE_NO_TRANSACTIONS = 10;
+let consecutiveNoBurn = 0;
+const fs = require("fs");
+const processedTransactionsFilePath = "processed_transactions.json";
+let processedTransactions = new Set();
+if (fs.existsSync(processedTransactionsFilePath)) {
+  const data = fs.readFileSync(processedTransactionsFilePath, "utf-8");
+  if (data.trim()) {
+    try {
+      const parsedData = JSON.parse(data);
+      if (Array.isArray(parsedData)) {
+        processedTransactions = new Set(parsedData);
+      } else {
+        throw new Error("Data read from file is not in the expected format");
+      }
+    } catch (error) {
+      console.error("Error parsing processed transactions data:", error);
+    }
+  }
+}
 
+function saveProcessedTransactions() {
+  try {
+    const data = JSON.stringify(Array.from(processedTransactions));
+    fs.writeFileSync(processedTransactionsFilePath, data, "utf-8");
+  } catch (error) {
+    console.error("Error saving processed transactions to file:", error);
+  }
+}
 async function getVoidPrice() {
   try {
     const response = await axios.get(
@@ -33,7 +63,7 @@ setInterval(async () => {
     currentVoidUsdPrice = priceInfo.voidPrice;
     console.log(`Updated current VOID USD price to: ${currentVoidUsdPrice}`);
   }
-}, 45000);
+}, 30000);
 
 let currentVoidUsdPrice = null;
 
@@ -42,6 +72,28 @@ let isSendingMessage = false;
 
 function addToMessageQueue(message) {
   messageQueue.push(message);
+}
+function addToBurnQueue(message) {
+  messageQueue.push(message);
+}
+async function sendBurnFromQueue() {
+  if (messageQueue.length > 0 && !isSendingMessage) {
+    isSendingMessage = true;
+    const message = messageQueue.shift();
+    try {
+      await bot.sendAnimation(
+        TELEGRAM_CHAT_ID,
+        message.animation,
+        message.options
+      );
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
+    setTimeout(() => {
+      isSendingMessage = false;
+      sendMessageFromQueue();
+    }, 2000);
+  }
 }
 async function sendMessageFromQueue() {
   if (messageQueue.length > 0 && !isSendingMessage) {
@@ -63,11 +115,35 @@ async function sendMessageFromQueue() {
   }
 }
 
-async function sendPhotoMessage(photo, options) {
+async function sendPhotoMessage(photo, options, pinMessage = false) {
   addToMessageQueue({ photo, options });
-sendMessageFromQueue(); 
+sendMessageFromQueue();
+  if (pinMessage) {
+    try {
+      await sleep(2000);
+      await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
+        disable_notification: true 
+      });
+    } catch (error) {
+      console.error("Error pinning message:", error);
+    }
   }
+}
+async function sendAnimationMessage(animation, options, pinMessage = false) {
+  addToBurnQueue({ animation, options });
+  sendBurnFromQueue();
 
+  if (pinMessage) {
+    try {
+      await sleep(2000);
+      await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
+        disable_notification: true 
+      });
+    } catch (error) {
+      console.error("Error pinning message:", error);
+    }
+  }
+}
 let lastProcessedTransactionHash = null;
 
 function getVoidRank(voidBalance) {
@@ -230,7 +306,7 @@ async function detectUniswapLatestTransaction() {
         const percentBurned = totalBurnedAmount / initialSupply * 100;
         
         const marketCap = voidPrice * totalSupply;
-        const emojiCount = Math.min(Math.ceil(amountTransferred / 7000), 96);
+        const emojiCount = Math.min(Math.ceil(amountTransferred / 5000), 90);
         let emojiString = "";
         for (let i = 0; i < emojiCount; i++) {
           emojiString += isBuy ? "🟣🔥" : "🔴🤡";
@@ -247,37 +323,25 @@ async function detectUniswapLatestTransaction() {
 💸 ${isBuy ? "Spent" : "Received"}: ${isBuy ? ethValue : ethValue / 2} ETH
 💼 ${isBuy
   ? `Bought ${amountTransferred.toFixed(2)} VOID (<a href="${addressLink}">View Address</a>)`
-  : `Sold ${amountTransferred.toFixed(2)} VOID (<a href="${addressLink}">View Address</a>)`}
+  : `Sold ${amountTransferred.toFixed(3)} VOID (<a href="${addressLink}">View Address</a>)`}
 🟣 VOID Price: $${voidPrice}
 💰 Market Cap: $${marketCap.toFixed(2)}
 🔥 Percent Burned: ${percentBurned.toFixed(2)}%
 <a href="${chartLink}">📈 Chart</a>
 <a href="${txHashLink}">💱 TX Hash</a>
-⚖️ Remaining VOID Balance: ${voidBalance.toFixed(3)}
+⚖️ Remaining VOID Balance: ${voidBalance}
 🛡️ VOID Rank: ${voidRank}`;
 const voidMessageOptions = {
   caption: message,
   parse_mode: "HTML",
 };
+minimumTransactionValueUsd = isBuy ? 200 : 10000;
 
-
-if (transaction.hash === lastProcessedTransactionHash ) {
+if (transaction.hash === lastProcessedTransactionHash || transactionvalue < minimumTransactionValueUsd) {
 console.log(`Skipping transaction because of hash}`);
 return;
-
 } else {
-if (!isBuy) {
-  minimumTransactionValueUsd = 5000; // Minimum threshold for buy transactions
-} else {
-  minimumTransactionValueUsd = 200; // Minimum threshold for sell transactions
-}
-
-if (transactionvalue < minimumTransactionValueUsd) {
-  console.log(`Skipping transaction below minimum threshold: $${minimumTransactionValueUsd}`);
-  return;
-}
-
-sendPhotoMessage(imageUrl, voidMessageOptions);
+sendPhotoMessage(imageUrl, voidMessageOptions, false);
 lastProcessedTransactionHash = transaction.hash;
           console.log("Latest transaction:", transaction);
         } }
@@ -293,7 +357,75 @@ lastProcessedTransactionHash = transaction.hash;
       }
     }
   }
-
+  async function detectVoidBurnEvent() {
+    try {  const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
+          const response = await axios.get(apiUrl); 
+          if (response.data.status !== "1") {
+            throw new Error("Failed to retrieve token transactions");
+          }
+      if (consecutiveNoBurn >= MAX_CONSECUTIVE_NO_TRANSACTIONS) {
+        console.log(`No new burn events detected. Sleeping for ${BURN_SLEEP_DURATION / 1000} seconds...`);
+        await sleep(BURN_SLEEP_DURATION);
+        consecutiveNoBurn = 0;
+      }
+  
+      await updateTotalBurnedAmount();
+  
+      const newBurnEvents = response.data.result.filter(
+        (transaction) =>
+          transaction.to.toLowerCase() ===
+            "0x0000000000000000000000000000000000000000" &&
+          !processedTransactions.has(transaction.hash)
+      );
+  
+      if (newBurnEvents.length === 0) {
+        console.log("No new burn events detected.");
+        consecutiveNoBurn++;
+        return;
+      }
+      consecutiveNoBurn = 0; 
+  
+      newBurnEvents.forEach((transaction) => {
+        processedTransactions.add(transaction.hash);
+        const amountBurned =
+          Number(transaction.value) / 10 ** tokenDecimals;
+        const txHash = transaction.hash;
+        const txHashLink = `https://basescan.org/tx/${txHash}`;
+        const chartLink = "https://dexscreener.com/base/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc";
+        const percentBurned =
+          ((initialSupply - totalBurnedAmountt) / initialSupply) * 100;
+          totalBurnedAmountt += amountBurned;
+        const burnMessage = `VOID Burned!\n\n💀💀💀💀💀\n🔥 Burned: ${amountBurned.toFixed(
+          3
+        )} VOID\nPercent Burned: ${percentBurned.toFixed(
+          2
+        )}%\n🔎 <a href="${chartLink}">Chart</a> | <a href="${txHashLink}">TX Hash</a>`;
+  
+        const burnanimationMessageOptions = {
+          caption: burnMessage,
+          parse_mode: "HTML",
+        };
+        sendAnimationMessage(burnAnimation, burnanimationMessageOptions, true);
+  
+        saveProcessedTransactions();
+      });
+    } catch (error) {
+      console.error("Error detecting token burn event:", error);
+    }
+  }
+  function scheduleNextCall(callback, delay) {
+    setTimeout(() => {
+        callback().finally(() => {
+            scheduleNextCall(callback, delay);
+        });
+    }, delay);
+  }
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+  let totalBurnedAmount = 0;
+  let totalBurnedAmountt = 0;
+  
   async function updateTotalBurnedAmount() {
     try {
       const apiUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&apikey=${ETHERSCAN_API_KEY}`;
@@ -309,6 +441,5 @@ lastProcessedTransactionHash = transaction.hash;
       console.error("Error updating total burned amount:", error);
     }
   }
-  setInterval(detectUniswapLatestTransaction, 12000);
-  setInterval(updateTotalBurnedAmount, 36000);
-
+  scheduleNextCall(detectVoidBurnEvent, 12500);
+  scheduleNextCall(detectUniswapLatestTransaction, 5000);
