@@ -13,7 +13,7 @@ const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
 const initialSupply = 100000000;
 const burnAnimation = "https://voidonbase.com/burn.gif";
-const BURN_SLEEP_DURATION = 10000;
+const BURN_SLEEP_DURATION = 5000;
 const MAX_CONSECUTIVE_NO_TRANSACTIONS = 10;
 let consecutiveNoBurn = 0;
 const fs = require("fs");
@@ -63,7 +63,7 @@ setInterval(async () => {
     currentVoidUsdPrice = priceInfo.voidPrice;
     console.log(`Updated current VOID USD price to: ${currentVoidUsdPrice}`);
   }
-}, 30000);
+}, 20000);
 
 let currentVoidUsdPrice = null;
 
@@ -111,38 +111,19 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2000);
+    }, 1000);
   }
 }
 
-async function sendPhotoMessage(photo, options, pinMessage = false) {
+async function sendPhotoMessage(photo, options) {
   addToMessageQueue({ photo, options });
 sendMessageFromQueue();
-  if (pinMessage) {
-    try {
-      await sleep(2000);
-      await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
-        disable_notification: true 
-      });
-    } catch (error) {
-      console.error("Error pinning message:", error);
-    }
+
   }
-}
-async function sendAnimationMessage(animation, options, pinMessage = false) {
+
+async function sendAnimationMessage(animation, options) {
   addToBurnQueue({ animation, options });
   sendBurnFromQueue();
-
-  if (pinMessage) {
-    try {
-      await sleep(2000);
-      await bot.pinChatMessage(TELEGRAM_CHAT_ID, options.message_id, {
-        disable_notification: true 
-      });
-    } catch (error) {
-      console.error("Error pinning message:", error);
-    }
-  }
 }
 let lastProcessedTransactionHash = null;
 
@@ -268,12 +249,7 @@ function getRankImageUrl(voidRank) {
 
 async function detectUniswapLatestTransaction() {
   try {
-    if (currentVoidUsdPrice === null) {
-      console.log("Waiting for VOID price data...");
-      return;
-    }
     const voidPrice = currentVoidUsdPrice;
-
     const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=${POOL_CONTRACT}&page=1&offset=1&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
     const response = await axios.get(apiUrl);
 
@@ -317,16 +293,15 @@ async function detectUniswapLatestTransaction() {
           const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
           const voidRank = getVoidRank(voidBalance);
           const imageUrl = getRankImageUrl(voidRank);  
-          const transactionvalue = amountTransferred * voidPrice;
           const message = `${emojiString}
 
 💸 ${isBuy ? "Spent" : "Received"}: ${isBuy ? ethValue : ethValue / 2} ETH
 💼 ${isBuy
   ? `Bought ${amountTransferred.toFixed(2)} VOID (<a href="${addressLink}">View Address</a>)`
   : `Sold ${amountTransferred.toFixed(3)} VOID (<a href="${addressLink}">View Address</a>)`}
-🟣 VOID Price: $${voidPrice}
-💰 Market Cap: $${marketCap.toFixed(2)}
-🔥 Percent Burned: ${percentBurned.toFixed(2)}%
+🟣 VOID Price: $${voidPrice.toFixed(3)}
+💰 Market Cap: $${marketCap.toFixed(1)}
+🔥 Percent Burned: ${percentBurned.toFixed(3)}%
 <a href="${chartLink}">📈 Chart</a>
 <a href="${txHashLink}">💱 TX Hash</a>
 ⚖️ Remaining VOID Balance: ${voidBalance}
@@ -335,28 +310,21 @@ const voidMessageOptions = {
   caption: message,
   parse_mode: "HTML",
 };
-minimumTransactionValueUsd = isBuy ? 200 : 10000;
 
-if (transaction.hash === lastProcessedTransactionHash || transactionvalue < minimumTransactionValueUsd) {
+if (transaction.hash === lastProcessedTransactionHash || currentVoidUsdPrice === null) {
 console.log(`Skipping transaction because of hash}`);
 return;
-} else {
-sendPhotoMessage(imageUrl, voidMessageOptions, false);
+} 
+else {
+sendPhotoMessage(imageUrl, voidMessageOptions);
 lastProcessedTransactionHash = transaction.hash;
-          console.log("Latest transaction:", transaction);
         } }
-
-        }
-    
-    } catch (error) {
-      if (error.response && error.response.status === 429) {
-        console.error('API rate limit reached, pausing for 60 seconds.');
-        await sleep(60000);
-      } else {
+        }  
+    } catch (error) {   
         console.error("Error in detectUniswapLatestTransaction:", error);
       }
     }
-  }
+  
   async function detectVoidBurnEvent() {
     try {  const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
           const response = await axios.get(apiUrl); 
@@ -405,7 +373,7 @@ lastProcessedTransactionHash = transaction.hash;
           caption: burnMessage,
           parse_mode: "HTML",
         };
-        sendAnimationMessage(burnAnimation, burnanimationMessageOptions, true);
+        sendAnimationMessage(burnAnimation, burnanimationMessageOptions);
   
         saveProcessedTransactions();
       });
@@ -441,5 +409,5 @@ lastProcessedTransactionHash = transaction.hash;
       console.error("Error updating total burned amount:", error);
     }
   }
-  scheduleNextCall(detectVoidBurnEvent, 12500);
-  scheduleNextCall(detectUniswapLatestTransaction, 5000);
+  scheduleNextCall(detectVoidBurnEvent, 4000);
+  scheduleNextCall(detectUniswapLatestTransaction, 2000);
