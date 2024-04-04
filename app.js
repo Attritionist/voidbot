@@ -59,7 +59,7 @@ setInterval(async () => {
     currentVoidUsdPrice = priceInfo.voidPrice;
     console.log(`Updated current VOID USD price to: ${currentVoidUsdPrice}`);
   }
-}, 25000);
+}, 30000);
 
 let currentVoidUsdPrice = null;
 
@@ -109,7 +109,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2000);
+    }, 1000);
   }
 }
 
@@ -410,5 +410,5 @@ lastProcessedTransactionHash = transaction.hash;
       console.error("Error updating total burned amount:", error);
     }
   }
-  scheduleNextCall(detectVoidBurnEvent, 3000);
-  scheduleNextCall(detectUniswapLatestTransaction, 2000);
+  scheduleNextCall(detectVoidBurnEvent, 10000);
+  scheduleNextCall(detectUniswapLatestTransaction, 3000);
