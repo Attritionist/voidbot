@@ -141,7 +141,7 @@ let lastProcessedTransactionHash = null;
 
 function getVoidRank(voidBalance) {
   const VOID_RANKS = {
-    "THE VOID": 2000000,
+    "VOID Ultimate": 2000000,
     "VOID Omega": 1000000,
     "VOID Absolute": 900000,
     "VOID Singularity": 850000,
@@ -253,7 +253,7 @@ function getRankImageUrl(voidRank) {
   "VOID Singularity": "https://voidonbase.com/rank51.png",
   "VOID Absolute": "https://voidonbase.com/rank52.png",
   "VOID Omega": "https://voidonbase.com/rank53.png",
-  "THE VOID": "https://voidonbase.com/rank54.png"
+  "VOID Ultimate": "https://voidonbase.com/rank54.png"
   };
 
   return rankToImageUrlMap[voidRank] || "https://voidonbase.com/rank1.png";
