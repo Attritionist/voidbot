@@ -59,7 +59,7 @@ setInterval(async () => {
     currentVoidUsdPrice = priceInfo.voidPrice;
     console.log(`Updated current VOID USD price to: ${currentVoidUsdPrice}`);
   }
-}, 30000);
+}, 25000);
 
 let currentVoidUsdPrice = null;
 
@@ -88,7 +88,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2000);
+    }, 1000);
   }
 }
 async function sendMessageFromQueue() {
@@ -107,7 +107,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 1000);
+    }, 2000);
   }
 }
 
@@ -262,23 +262,16 @@ async function detectUniswapLatestTransaction() {
       const chartLink =
         "https://dexscreener.com/base/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc";
 
-      const txDetailsUrl = `https://api.basescan.org/api?module=account&action=txlistinternal&txhash=${transaction.hash}&apikey=${ETHERSCAN_API_KEY}`;
       const amountTransferred =
       Number(transaction.value) / 10 ** tokenDecimals;
-
-      const txDetailsResponse = await axios.get(txDetailsUrl);
-      if (txDetailsResponse.data.status === "1") {
-        const ethAmount = txDetailsResponse.data.result
-          .filter((result) => result.isError === "0")
-          .reduce((sum, result) => sum + Number(result.value), 0) / 10 ** 18;  
-        const ethValue = ethAmount.toFixed(6);
 
         const totalSupply = initialSupply - totalBurnedAmount;
 
         const percentBurned = totalBurnedAmount / initialSupply * 100;
-        const transactionvalue = amountTransferred.toFixed(2) * voidPrice.toFixed(5)
+        const transactionvalue = (amountTransferred * voidPrice).toFixed(2);
         const marketCap = voidPrice * totalSupply;
         const emojiCount = Math.min(Math.ceil(amountTransferred / 5000), 90);
+
         let emojiString = "";
         for (let i = 0; i < emojiCount; i++) {
           emojiString += isBuy ? "🟣🔥" : "🔴🤡";
@@ -289,10 +282,9 @@ async function detectUniswapLatestTransaction() {
           const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
           const voidRank = getVoidRank(voidBalance);
           const imageUrl = getRankImageUrl(voidRank);  
-          const message = `${emojiString}
 
-💸 ${isBuy ? "Spent" : "Received"}: ${isBuy ? ethValue : ethValue / 2} ETH
-💼 ${isBuy
+          const message = `${emojiString}
+💸 ${isBuy
   ? `Bought ${amountTransferred.toFixed(2)} VOID ($${transactionvalue})  (<a href="${addressLink}">View Address</a>)`
   : `Sold ${amountTransferred.toFixed(2)} VOID ($${transactionvalue}) (<a href="${addressLink}">View Address</a>)`}
 🟣 VOID Price: $${voidPrice.toFixed(5)}
@@ -302,10 +294,12 @@ async function detectUniswapLatestTransaction() {
 <a href="${txHashLink}">💱 TX Hash</a>
 ⚖️ Remaining VOID Balance: ${voidBalance.toFixed(5)}
 🛡️ VOID Rank: ${voidRank}`;
+
 const voidMessageOptions = {
   caption: message,
   parse_mode: "HTML",
 };
+
 minimumTransactionValueUsd = isBuy ? 200 : 10000;
 
 if (transaction.hash === lastProcessedTransactionHash || currentVoidUsdPrice === null || transactionvalue < minimumTransactionValueUsd) {
@@ -313,14 +307,16 @@ console.log(`Skipping transaction because of hash}`);
 return;
 } 
 else {
+
 sendPhotoMessage(imageUrl, voidMessageOptions);
+
 lastProcessedTransactionHash = transaction.hash;
+
         } }
-        }  
+          
     } catch (error) {   
         console.error("Error in detectUniswapLatestTransaction:", error);
-      }
-    }
+      } }
   
   async function detectVoidBurnEvent() {
     try {  const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
