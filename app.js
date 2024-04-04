@@ -59,7 +59,7 @@ setInterval(async () => {
     currentVoidUsdPrice = priceInfo.voidPrice;
     console.log(`Updated current VOID USD price to: ${currentVoidUsdPrice}`);
   }
-}, 30000);
+}, 25000);
 
 let currentVoidUsdPrice = null;
 
@@ -88,7 +88,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2000);
+    }, 1000);
   }
 }
 async function sendMessageFromQueue() {
@@ -107,7 +107,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 1000);
+    }, 2000);
   }
 }
 
@@ -246,17 +246,12 @@ function getRankImageUrl(voidRank) {
 async function detectUniswapLatestTransaction() {
   try {
     const voidPrice = currentVoidUsdPrice;
-    try {
-      const url = 'https://pro-api.coingecko.com/api/v3/onchain/networks/base/pools/0xb14e941d34d61ae251ccc08ac15b8455ae9f60a5/trades?trade_volume_in_usd_greater_than=200';
-      const options = { method: 'GET', headers: { 'x-cg-pro-api-key': 'CG-bSeGwUPHsNSjBFNWwCzxucG6' } };
-  
-      const response = await fetch(url, options);
-      const json = await response.json();
-  
-      if (!json.data || json.data.length === 0) {
-        console.log("No new trades found.");
-        return;
-      }
+    const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=${POOL_CONTRACT}&page=1&offset=1&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
+    const response = await axios.get(apiUrl);
+
+    if (response.data.status !== "1") {
+      throw new Error("Failed to retrieve latest Uniswap transaction");
+    }
 
     const transaction = response.data.result[0];
       const isBuy =
@@ -276,8 +271,8 @@ async function detectUniswapLatestTransaction() {
         const transactionvalue = (amountTransferred * voidPrice).toFixed(2);
         const marketCap = voidPrice * totalSupply;
         const baseEmojiCount = Math.min(Math.ceil(amountTransferred / 5000), 90);
-
         const emojiCount = isBuy ? baseEmojiCount : Math.floor(baseEmojiCount / 2);
+
 
         let emojiString = "";
         for (let i = 0; i < emojiCount; i++) {
@@ -399,5 +394,5 @@ lastProcessedTransactionHash = transaction.hash;
       console.error("Error updating total burned amount:", error);
     }
   }
-  scheduleNextCall(detectVoidBurnEvent, 2000);
-  scheduleNextCall(detectUniswapLatestTransaction, 1000);
+  scheduleNextCall(detectVoidBurnEvent, 3000);
+  scheduleNextCall(detectUniswapLatestTransaction, 2000);
