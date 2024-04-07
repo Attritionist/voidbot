@@ -410,5 +410,5 @@ lastProcessedTransactionHash = transaction.hash;
       console.error("Error updating total burned amount:", error);
     }
   }
-  scheduleNextCall(detectVoidBurnEvent, 10000);
-  scheduleNextCall(detectUniswapLatestTransaction, 3000);
+  scheduleNextCall(detectVoidBurnEvent, 3500);
+  scheduleNextCall(detectUniswapLatestTransaction, 1000);
