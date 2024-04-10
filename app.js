@@ -308,8 +308,8 @@ async function detectUniswapLatestTransaction() {
           const addressLink = `https://debank.com/profile/${fromAddress}`;
           const txHashLink = `https://basescan.org/tx/${transaction.attributes.tx_hash}`;
           const chartLink = "https://dexscreener.com/base/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc";
-          const amountTransferred = isBuy ? Number(transaction.attributes.to_token_amount) / 10 ** tokenDecimals : Number(transaction.attributes.from_token_amount) / 10 ** tokenDecimals;
-
+          const amountTransferred = isBuy ? Number(transaction.attributes.to_token_amount) : Number(transaction.attributes.from_token_amount);
+          
           const totalSupply = initialSupply - totalBurnedAmount;
           const percentBurned = totalBurnedAmount / initialSupply * 100;
           const transactionvalue = transaction.attributes.volume_in_usd;
