@@ -6,7 +6,6 @@ const TELEGRAM_CHAT_ID = process.env["TELEGRAM_CHAT_ID"];
 const TELEGRAM_BOT_TOKEN = process.env["TELEGRAM_BOT_TOKEN"];
 const ETHERSCAN_API_KEY = process.env["ETHERSCAN_API_KEY"];
 const TOKEN_CONTRACT = process.env["TOKEN_CONTRACT"];
-const POOL_CONTRACT = process.env["POOL_CONTRACT"];
 const COINGECKO_API = process.env["COINGECKO_API"];
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
