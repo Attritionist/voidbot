@@ -317,7 +317,7 @@ async function detectUniswapLatestTransaction() {
           const baseEmojiCount = Math.min(Math.ceil(amountTransferred / 5000), 90);
           const emojiCount = isBuy ? baseEmojiCount : Math.floor(baseEmojiCount);
 
-          if ((isBuy && Number(transaction.attributes.volume_in_usd > 200) || !isBuy && Number(transaction.attributes.volume_in_usd > 2000))) {
+          if ((isBuy && Number(transaction.attributes.volume_in_usd > 20) || !isBuy && Number(transaction.attributes.volume_in_usd > 20))) {
             let emojiString = "";
 
             for (let i = 0; i < emojiCount; i++) {
@@ -334,7 +334,7 @@ async function detectUniswapLatestTransaction() {
 
               const message = `${emojiString}
               💸 ${isBuy
-                  ? `Bought ${amountTransferred.toFixed(2)} VOID ($${transactionvalue})  (<a href="${addressLink}">View Address</a>)`
+                  ? `Bought ${amountTransferred.toFixed(2)} ETH ($${transactionvalue})  (<a href="${addressLink}">View Address</a>)`
                   : `Sold ${amountTransferred.toFixed(2)} VOID ($${transactionvalue}) (<a href="${addressLink}">View Address</a>)`}
               🟣 VOID Price: $${voidPrice.toFixed(5)}
               💰 Market Cap: $${marketCap.toFixed(0)}
