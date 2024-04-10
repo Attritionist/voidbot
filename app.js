@@ -334,8 +334,8 @@ async function detectUniswapLatestTransaction() {
 
               const message = `${emojiString}
               💸 ${isBuy
-                  ? `Bought ${amountTransferred.toFixed(2)} ETH ($${transactionvalue})  (<a href="${addressLink}">View Address</a>)`
-                  : `Sold ${amountTransferred.toFixed(2)} VOID ($${transactionvalue}) (<a href="${addressLink}">View Address</a>)`}
+                  ? `Bought ${amountTransferred.toFixed(2)} VOID ($${transactionvalue})  (<a href="${addressLink}">View Address</a>)`
+                  : `Sold ${amountTransferred.toFixed(2)} ETH ($${transactionvalue}) (<a href="${addressLink}">View Address</a>)`}
               🟣 VOID Price: $${voidPrice.toFixed(5)}
               💰 Market Cap: $${marketCap.toFixed(0)}
               🔥 Percent Burned: ${percentBurned.toFixed(3)}%
