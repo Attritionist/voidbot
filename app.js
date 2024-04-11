@@ -317,7 +317,7 @@ async function detectUniswapLatestTransaction() {
           const baseEmojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 125), 90);
           const emojiCount = isBuy ? baseEmojiCount : Math.floor(baseEmojiCount);
 
-          if ((isBuy && Number(transaction.attributes.volume_in_usd > 200) || !isBuy && Number(transaction.attributes.volume_in_usd > 2000))) {
+          if ((isBuy && Number(transaction.attributes.volume_in_usd > 150) || !isBuy && Number(transaction.attributes.volume_in_usd > 5000))) {
             let emojiString = "";
 
             for (let i = 0; i < emojiCount; i++) {
