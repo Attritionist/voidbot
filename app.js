@@ -100,7 +100,6 @@ async function sendBurnFromQueue() {
       message.resolve(sentMessage);
     } catch (error) {
       console.error("Error sending message:", error);
-      message.reject(error);
     }
     setTimeout(() => {
       isSendingMessage = false;
@@ -124,7 +123,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2000);
+    }, 1000);
   }
 }
 
@@ -143,7 +142,7 @@ async function sendAnimationMessage(animation, options, pinMessage = true) {
       // Assuming sendMessageResponse includes the sent message details
       const messageId = sendMessageResponse.message_id;
 
-      await sleep(1000); // Wait to ensure the message is sent
+      await sleep(2000); // Wait to ensure the message is sent
 
       // Pin the message in the group
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, messageId, { disable_notification: true });
@@ -152,7 +151,6 @@ async function sendAnimationMessage(animation, options, pinMessage = true) {
     }
   }
 }
-let lastProcessedTransactionHash = null;
 
 function getVoidRank(voidBalance) {
   const VOID_RANKS = {
@@ -445,7 +443,7 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 5000);
+scheduleNextCall(detectVoidBurnEvent, 10000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
