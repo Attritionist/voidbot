@@ -314,7 +314,7 @@ async function detectUniswapLatestTransaction() {
           const percentBurned = totalBurnedAmount / initialSupply * 100;
           const transactionvalue = transaction.attributes.volume_in_usd;
           const marketCap = voidPrice * totalSupply;
-          const baseEmojiCount = Math.min(Math.ceil(amountTransferred / 5000), 90);
+          const baseEmojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 125), 90);
           const emojiCount = isBuy ? baseEmojiCount : Math.floor(baseEmojiCount);
 
           if ((isBuy && Number(transaction.attributes.volume_in_usd > 200) || !isBuy && Number(transaction.attributes.volume_in_usd > 2000))) {
@@ -326,16 +326,18 @@ async function detectUniswapLatestTransaction() {
 
             const balanceDetailsUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${TOKEN_CONTRACT}&address=${fromAddress}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
             const balanceDetailResponse = await axios.get(balanceDetailsUrl);
+            const poolName = POOL_MAPPING[poolAddress];
+            const tokenName = poolName.split('/')[isBuy ? 1 : 0];
 
             if (balanceDetailResponse.data.status === "1") {
               const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
               const voidRank = getVoidRank(voidBalance);
               const imageUrl = getRankImageUrl(voidRank);
 
-const message = `${emojiString}
+              const message = `${emojiString}
 💸 ${isBuy
-? `Bought ${amountTransferred.toFixed(2)} VOID ($${transactionvalue})  (<a href="${addressLink}">View Address</a>)`
-: `Sold ${amountTransferred.toFixed(2)} VOID ($${transactionvalue}) (<a href="${addressLink}">View Address</a>)`}
+? `Bought ${amountTransferred.toFixed(2)} ${tokenName} ($${transactionvalue})  (<a href="${addressLink}">View Address</a>)`
+: `Sold ${amountTransferred.toFixed(2)} ${tokenName} ($${transactionvalue}) (<a href="${addressLink}">View Address</a>)`}
 🟣 VOID Price: $${voidPrice.toFixed(5)}
 💰 Market Cap: $${marketCap.toFixed(0)}
 🔥 Percent Burned: ${percentBurned.toFixed(3)}%
