@@ -331,8 +331,9 @@ async function detectUniswapLatestTransaction() {
 
             if (balanceDetailResponse.data.status === "1") {
               const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
+              const isArbitrageTransaction = isBuy && voidBalance === 0;
+              const imageUrl = isArbitrageTransaction ? "https://voidonbase.com/arbitrage.jpg" : getRankImageUrl(voidRank);
               const voidRank = getVoidRank(voidBalance);
-              const imageUrl = getRankImageUrl(voidRank);
 
               const message = `${emojiString}
 💸 ${isBuy
@@ -343,7 +344,7 @@ async function detectUniswapLatestTransaction() {
 🔥 Percent Burned: ${percentBurned.toFixed(3)}%
 <a href="${chartLink}">📈 Chart</a>
 <a href="${txHashLink}">💱 TX Hash</a>
-${isBuy && voidBalance === 0
+${isArbitrageTransaction
   ? `⚠️ Arbitrage Transaction`
   : `⚖️ Remaining VOID Balance: ${voidBalance.toFixed(5)}
 🛡️ VOID Rank: ${voidRank}`}
