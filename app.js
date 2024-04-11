@@ -327,7 +327,7 @@ async function detectUniswapLatestTransaction() {
             const balanceDetailsUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${TOKEN_CONTRACT}&address=${fromAddress}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
             const balanceDetailResponse = await axios.get(balanceDetailsUrl);
             const poolName = POOL_MAPPING[poolAddress];
-            const tokenName = poolName.split('/')[isBuy ? 1 : 0];
+            const tokenName = poolName.split('/')[isBuy ? 0 : 1];
 
             if (balanceDetailResponse.data.status === "1") {
               const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
