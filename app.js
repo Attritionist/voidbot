@@ -269,7 +269,7 @@ function getRankImageUrl(voidRank) {
     "VOID Ultimate": "https://voidonbase.com/rank54.png"
   };
 
-  return rankToImageUrlMap[voidRank] || "https://voidonbase.com/rank1.png";
+  return rankToImageUrlMap[voidRank] || "https://voidonbase.com/default.png";
 }
 
 async function detectUniswapLatestTransaction() {
