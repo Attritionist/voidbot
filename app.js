@@ -332,19 +332,18 @@ async function detectUniswapLatestTransaction() {
               const voidRank = getVoidRank(voidBalance);
               const imageUrl = getRankImageUrl(voidRank);
 
-              const message = `${emojiString}
-              💸 ${isBuy
-                  ? `Bought ${amountTransferred.toFixed(2)} VOID ($${transactionvalue})  (<a href="${addressLink}">View Address</a>)`
-                  : `Sold ${amountTransferred.toFixed(2)} VOID ($${transactionvalue}) (<a href="${addressLink}">View Address</a>)`}
-              🟣 VOID Price: $${voidPrice.toFixed(5)}
-              💰 Market Cap: $${marketCap.toFixed(0)}
-              🔥 Percent Burned: ${percentBurned.toFixed(3)}%
-              <a href="${chartLink}">📈 Chart</a>
-              <a href="${txHashLink}">💱 TX Hash</a>
-              ⚖️ Remaining VOID Balance: ${voidBalance.toFixed(5)}
-              🛡️ VOID Rank: ${voidRank}
-              🚰 Pool: ${POOL_MAPPING[poolAddress]}`;
-
+const message = `${emojiString}
+💸 ${isBuy
+? `Bought ${amountTransferred.toFixed(2)} VOID ($${transactionvalue})  (<a href="${addressLink}">View Address</a>)`
+: `Sold ${amountTransferred.toFixed(2)} VOID ($${transactionvalue}) (<a href="${addressLink}">View Address</a>)`}
+🟣 VOID Price: $${voidPrice.toFixed(5)}
+💰 Market Cap: $${marketCap.toFixed(0)}
+🔥 Percent Burned: ${percentBurned.toFixed(3)}%
+<a href="${chartLink}">📈 Chart</a>
+<a href="${txHashLink}">💱 TX Hash</a>
+⚖️ Remaining VOID Balance: ${voidBalance.toFixed(5)}
+🛡️ VOID Rank: ${voidRank}
+🚰 Pool: ${POOL_MAPPING[poolAddress]}`;
 
               const voidMessageOptions = {
                 caption: message,
@@ -441,7 +440,7 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 3500);
+scheduleNextCall(detectVoidBurnEvent, 7500);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
@@ -471,5 +470,5 @@ const fetchInitialUniswapTransactions = async () => {
 fetchInitialUniswapTransactions().catch((error) => {
   console.error("Error fetching initial Uniswap transactions:", error);
 }).then(() => {
-  scheduleNextCall(detectUniswapLatestTransaction, 10000);
+  scheduleNextCall(detectUniswapLatestTransaction, 30000);
 });
