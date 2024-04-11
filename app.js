@@ -366,83 +366,81 @@ async function detectUniswapLatestTransaction() {
     }
   });
 }
-
 async function detectVoidBurnEvent() {
-  try {
-    const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
-    const response = await axios.get(apiUrl);
-    if (response.data.status !== "1") {
-      throw new Error("Failed to retrieve token transactions");
-    }
+    try {  const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
+          const response = await axios.get(apiUrl); 
+          if (response.data.status !== "1") {
+            throw new Error("Failed to retrieve token transactions");
+          }
 
     await updateTotalBurnedAmount();
-
-    const newBurnEvents = response.data.result.filter(
-      (transaction) =>
-        transaction.to.toLowerCase() ===
-        "0x0000000000000000000000000000000000000000" &&
-        !processedTransactions.has(transaction.hash)
-    );
+  
+      const newBurnEvents = response.data.result.filter(
+        (transaction) =>
+          transaction.to.toLowerCase() ===
+            "0x0000000000000000000000000000000000000000" &&
+          !processedTransactions.has(transaction.hash)
+      );
 
     if (newBurnEvents.length === 0) {
-      console.log("No new burn events detected.");
-      return;
+        console.log("No new burn events detected.");
+        return;
+      }
+
+   newBurnEvents.forEach((transaction) => {
+        processedTransactions.add(transaction.hash);
+        const amountBurned =
+          Number(transaction.value) / 10 ** tokenDecimals;
+        const txHash = transaction.hash;
+        const txHashLink = `https://basescan.org/tx/${txHash}`;
+        const chartLink = "https://dexscreener.com/base/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc";
+        const percentBurned =
+          ((initialSupply - totalBurnedAmountt) / initialSupply) * 100;
+          totalBurnedAmountt += amountBurned;
+        const burnMessage = `VOID Burned!\n\n💀💀💀💀💀\n🔥 Burned: ${amountBurned.toFixed(
+          3
+        )} VOID\nPercent Burned: ${percentBurned.toFixed(
+          2
+        )}%\n🔎 <a href="${chartLink}">Chart</a> | <a href="${txHashLink}">TX Hash</a>`;
+  
+        const burnanimationMessageOptions = {
+          caption: burnMessage,
+          parse_mode: "HTML",
+        };
+        sendAnimationMessage(burnAnimation, burnanimationMessageOptions, true);
+  
+        saveProcessedTransactions();
+      });
+    } catch (error) {
+      console.error("Error detecting token burn event:", error);
     }
-
-    newBurnEvents.forEach((transaction) => {
-      processedTransactions.add(transaction.hash);
-      const amountBurned =
-        Number(transaction.value) / 10 ** tokenDecimals;
-      const txHash = transaction.hash;
-      const txHashLink = `https://basescan.org/tx/${txHash}`;
-      const chartLink = "https://dexscreener.com/base/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc";
-      const percentBurned =
-        ((initialSupply - totalBurnedAmountt) / initialSupply) * 100;
-      totalBurnedAmountt += amountBurned;
-      const burnMessage = `VOID Burned!\n\n💀💀💀💀💀\n🔥 Burned: ${amountBurned.toFixed(
-        3
-      )} VOID\nPercent Burned: ${percentBurned.toFixed(
-        2
-      )}%\n🔎 <a href="${chartLink}">Chart</a> | <a href="${txHashLink}">TX Hash</a>`;
-
-      const burnanimationMessageOptions = {
-        caption: burnMessage,
-        parse_mode: "HTML",
-      };
-      sendAnimationMessage(burnAnimation, burnanimationMessageOptions, true);
-
-      saveProcessedTransactions();
-    });
-  } catch (error) {
-    console.error("Error detecting token burn event:", error);
   }
-}
-function scheduleNextCall(callback, delay) {
-  setTimeout(() => {
-    callback().finally(() => {
-      scheduleNextCall(callback, delay);
-    });
-  }, delay);
-}
-let totalBurnedAmount = 0;
-let totalBurnedAmountt = 0;
-
-async function updateTotalBurnedAmount() {
-  try {
-    const apiUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&apikey=${ETHERSCAN_API_KEY}`;
-    const response = await axios.get(apiUrl);
-
-    if (response.data.status === "1") {
-      const balance = Number(response.data.result) / 10 ** tokenDecimals;
-      totalBurnedAmount = balance;
-      totalBurnedAmountt = initialSupply - balance;
-
+  function scheduleNextCall(callback, delay) {
+    setTimeout(() => {
+        callback().finally(() => {
+            scheduleNextCall(callback, delay);
+        });
+    }, delay);
+  }
+  let totalBurnedAmount = 0;
+  let totalBurnedAmountt = 0;
+  
+  async function updateTotalBurnedAmount() {
+    try {
+      const apiUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&apikey=${ETHERSCAN_API_KEY}`;
+      const response = await axios.get(apiUrl);
+  
+      if (response.data.status === "1") {
+        const balance = Number(response.data.result) / 10 ** tokenDecimals;
+        totalBurnedAmount = balance;
+        totalBurnedAmountt = initialSupply - balance;
+  
+      }
+    } catch (error) {
+      console.error("Error updating total burned amount:", error);
     }
-  } catch (error) {
-    console.error("Error updating total burned amount:", error);
   }
-}
-scheduleNextCall(detectVoidBurnEvent, 10000);
+  scheduleNextCall(detectVoidBurnEvent, 5000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
