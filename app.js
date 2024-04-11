@@ -332,8 +332,9 @@ async function detectUniswapLatestTransaction() {
             if (balanceDetailResponse.data.status === "1") {
               const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
               const isArbitrageTransaction = isBuy && voidBalance === 0;
-              const imageUrl = isArbitrageTransaction ? "https://voidonbase.com/arbitrage.jpg" : getRankImageUrl(voidRank);
               const voidRank = getVoidRank(voidBalance);
+              const imageUrl = isArbitrageTransaction ? "https://voidonbase.com/arbitrage.jpg" : getRankImageUrl(voidRank);
+
 
               const message = `${emojiString}
 💸 ${isBuy
