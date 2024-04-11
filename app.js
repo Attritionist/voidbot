@@ -103,7 +103,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 1000);
+    }, 2000);
   }
 }
 async function sendMessageFromQueue() {
@@ -122,7 +122,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 1000);
+    }, 2000);
   }
 }
 
@@ -141,7 +141,7 @@ async function sendAnimationMessage(animation, options, pinMessage = true) {
       // Assuming sendMessageResponse includes the sent message details
       const messageId = sendMessageResponse.message_id;
 
-      await sleep(2000); // Wait to ensure the message is sent
+      await sleep(1000); // Wait to ensure the message is sent
 
       // Pin the message in the group
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, messageId, { disable_notification: true });
@@ -440,7 +440,7 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 5000);
+scheduleNextCall(detectVoidBurnEvent, 10000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
@@ -470,5 +470,5 @@ const fetchInitialUniswapTransactions = async () => {
 fetchInitialUniswapTransactions().catch((error) => {
   console.error("Error fetching initial Uniswap transactions:", error);
 }).then(() => {
-  scheduleNextCall(detectUniswapLatestTransaction, 50000);
+  scheduleNextCall(detectUniswapLatestTransaction, 60000);
 });
