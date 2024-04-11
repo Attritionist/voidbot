@@ -318,10 +318,10 @@ async function detectUniswapLatestTransaction() {
           const percentBurned = totalBurnedAmount / initialSupply * 100;
           const transactionvalue = transaction.attributes.volume_in_usd;
           const marketCap = voidPrice * totalSupply;
-          const baseEmojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 125), 90);
+          const baseEmojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 150), 90);
           const emojiCount = isBuy ? baseEmojiCount : Math.floor(baseEmojiCount);
 
-          if ((isBuy && Number(transaction.attributes.volume_in_usd > 150) || !isBuy && Number(transaction.attributes.volume_in_usd > 5000))) {
+          if ((isBuy && Number(transaction.attributes.volume_in_usd > 150) || !isBuy && Number(transaction.attributes.volume_in_usd > 4500))) {
             let emojiString = "";
 
             for (let i = 0; i < emojiCount; i++) {
@@ -338,15 +338,17 @@ async function detectUniswapLatestTransaction() {
 
               const message = `${emojiString}
 💸 ${isBuy
-                  ? `Bought ${amountTransferred.toFixed(2)} VOID ($${transactionvalue})  (<a href="${addressLink}">View Address</a>)`
-                  : `Sold ${amountTransferred.toFixed(2)} VOID ($${transactionvalue}) (<a href="${addressLink}">View Address</a>)`}
+? `Bought ${amountTransferred.toFixed(2)} VOID ($${transactionvalue})  (<a href="${addressLink}">View Address</a>)`
+: `Sold ${amountTransferred.toFixed(2)} VOID ($${transactionvalue}) (<a href="${addressLink}">View Address</a>)`}
 🟣 VOID Price: $${voidPrice.toFixed(5)}
 💰 Market Cap: $${marketCap.toFixed(0)}
 🔥 Percent Burned: ${percentBurned.toFixed(3)}%
 <a href="${chartLink}">📈 Chart</a>
 <a href="${txHashLink}">💱 TX Hash</a>
-⚖️ Remaining VOID Balance: ${voidBalance.toFixed(5)}
-🛡️ VOID Rank: ${voidRank}
+${isBuy && voidBalance === 0
+  ? `⚠️ Arbitrage Transaction`
+  : `⚖️ Remaining VOID Balance: ${voidBalance.toFixed(5)}
+🛡️ VOID Rank: ${voidRank}`}
 🚰 Pool: ${POOL_MAPPING[poolAddress]}`;
 
               const voidMessageOptions = {
