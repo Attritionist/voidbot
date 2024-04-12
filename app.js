@@ -421,10 +421,12 @@ async function detectVoidBurnEvent() {
   }
 }
 function scheduleNextCall(callback, delay) {
-  setTimeout(() => {
-      callback().finally(() => {
+  setTimeout(async () => {
+      try {
+          await callback();
+      } finally {
           scheduleNextCall(callback, delay);
-      });
+      }
   }, delay);
 }
 let totalBurnedAmount = 0;
@@ -432,7 +434,7 @@ let totalBurnedAmountt = 0;
 
 async function updateTotalBurnedAmount() {
   try {
-    const apiUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&apikey=${ETHERSCAN_API_KEY}`;
+    const apiUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
     const response = await axios.get(apiUrl);
 
     if (response.data.status === "1") {
@@ -445,7 +447,7 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 20000);
+scheduleNextCall(detectVoidBurnEvent, 60000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
