@@ -105,7 +105,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 1000);
+    }, 2000);
   }
 }
 async function sendMessageFromQueue() {
@@ -124,7 +124,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 1000);
+    }, 2000);
   }
 }
 
@@ -445,7 +445,7 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 10000);
+scheduleNextCall(detectVoidBurnEvent, 20000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
