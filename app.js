@@ -100,6 +100,7 @@ async function sendBurnFromQueue() {
       message.resolve(sentMessage);
     } catch (error) {
       console.error("Error sending message:", error);
+      message.reject(error);
     }
     setTimeout(() => {
       isSendingMessage = false;
@@ -123,35 +124,35 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 1000);
+    }, 2000);
   }
 }
 
+
 async function sendPhotoMessage(photo, options) {
   addToMessageQueue({ photo, options });
-  sendMessageFromQueue();
+sendMessageFromQueue();
 
-}
+  }
 
 async function sendAnimationMessage(animation, options, pinMessage = true) {
   const sendMessageResponse = await addToBurnQueue({ animation, options });
   await sendBurnFromQueue();
-
+  
   if (pinMessage) {
     try {
       // Assuming sendMessageResponse includes the sent message details
       const messageId = sendMessageResponse.message_id;
-
+      
       await sleep(2000); // Wait to ensure the message is sent
-
+  
       // Pin the message in the group
       await bot.pinChatMessage(TELEGRAM_CHAT_ID, messageId, { disable_notification: true });
     } catch (error) {
       console.error("Error pinning message:", error);
     }
   }
-}
-
+  }
 function getVoidRank(voidBalance) {
   const VOID_RANKS = {
     "VOID Ultimate": 2000000,
@@ -332,9 +333,8 @@ async function detectUniswapLatestTransaction() {
             if (balanceDetailResponse.data.status === "1") {
               const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
               const isArbitrageTransaction = isBuy && voidBalance === 0;
-              const voidRank = getVoidRank(voidBalance);
               const imageUrl = isArbitrageTransaction ? "https://voidonbase.com/arbitrage.jpg" : getRankImageUrl(voidRank);
-
+              const voidRank = getVoidRank(voidBalance);
 
               const message = `${emojiString}
 💸 ${isBuy
@@ -371,19 +371,18 @@ ${isArbitrageTransaction
   });
 }
 async function detectVoidBurnEvent() {
-  try {
-    const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
-    const response = await axios.get(apiUrl);
-    if (response.data.status !== "1") {
-      throw new Error("Failed to retrieve token transactions");
-    }
+  try {  const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
+        const response = await axios.get(apiUrl); 
+        if (response.data.status !== "1") {
+          throw new Error("Failed to retrieve token transactions");
+        }
 
     await updateTotalBurnedAmount();
 
     const newBurnEvents = response.data.result.filter(
       (transaction) =>
         transaction.to.toLowerCase() ===
-        "0x0000000000000000000000000000000000000000" &&
+          "0x0000000000000000000000000000000000000000" &&
         !processedTransactions.has(transaction.hash)
     );
 
@@ -401,7 +400,7 @@ async function detectVoidBurnEvent() {
       const chartLink = "https://dexscreener.com/base/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc";
       const percentBurned =
         ((initialSupply - totalBurnedAmountt) / initialSupply) * 100;
-      totalBurnedAmountt += amountBurned;
+        totalBurnedAmountt += amountBurned;
       const burnMessage = `VOID Burned!\n\n💀💀💀💀💀\n🔥 Burned: ${amountBurned.toFixed(
         3
       )} VOID\nPercent Burned: ${percentBurned.toFixed(
@@ -422,9 +421,9 @@ async function detectVoidBurnEvent() {
 }
 function scheduleNextCall(callback, delay) {
   setTimeout(() => {
-    callback().finally(() => {
-      scheduleNextCall(callback, delay);
-    });
+      callback().finally(() => {
+          scheduleNextCall(callback, delay);
+      });
   }, delay);
 }
 let totalBurnedAmount = 0;
@@ -445,7 +444,7 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 10000);
+scheduleNextCall(detectVoidBurnEvent, 20000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
