@@ -5,7 +5,6 @@ require("dotenv").config();
 const TELEGRAM_CHAT_ID = process.env["TELEGRAM_CHAT_ID"];
 const TELEGRAM_BOT_TOKEN = process.env["TELEGRAM_BOT_TOKEN"];
 const ETHERSCAN_API_KEY = process.env["ETHERSCAN_API_KEY"];
-const TOKEN_CONTRACT = process.env["TOKEN_CONTRACT"];
 const COINGECKO_API = process.env["COINGECKO_API"];
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
@@ -135,23 +134,11 @@ sendMessageFromQueue();
 
   }
 
-async function sendAnimationMessage(animation, options, pinMessage = true) {
-  const sendMessageResponse = await addToBurnQueue({ animation, options });
-  await sendBurnFromQueue();
+async function sendAnimationMessage(animation, options) {
+   addToBurnQueue({ animation, options });
+sendBurnFromQueue();
   
-  if (pinMessage) {
-    try {
-      // Assuming sendMessageResponse includes the sent message details
-      const messageId = sendMessageResponse.message_id;
-      
-      await sleep(2000); // Wait to ensure the message is sent
   
-      // Pin the message in the group
-      await bot.pinChatMessage(TELEGRAM_CHAT_ID, messageId, { disable_notification: true });
-    } catch (error) {
-      console.error("Error pinning message:", error);
-    }
-  }
   }
 function getVoidRank(voidBalance) {
   const VOID_RANKS = {
@@ -327,11 +314,8 @@ async function detectUniswapLatestTransaction() {
               emojiString += isBuy ? "🟣🔥" : "🔴🤡";
             }
 
-            const balanceDetailsUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${TOKEN_CONTRACT}&address=${fromAddress}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
-            const balanceDetailResponse = await axios.get(balanceDetailsUrl, {
-              headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
-              }});
+            const balanceDetailsUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc&address=${fromAddress}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
+            const balanceDetailResponse = await axios.get(balanceDetailsUrl);
 
             if (balanceDetailResponse.data.status === "1") {
               const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
@@ -374,79 +358,70 @@ ${isArbitrageTransaction
     }
   });
 }
-async function detectVoidBurnEvent() {
-  try {  const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
-        const response = await axios.get(apiUrl, {
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
+        async function detectVoidBurnEvent() {
+          try {
+            const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc&address=0x0000000000000000000000000000000000000000&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
+            const response = await axios.get(apiUrl);
+            if (response.data.status !== "1") {
+              throw new Error("Failed to retrieve token transactions");
+            }
+        
+            await updateTotalBurnedAmount();
+        
+            const newBurnEvents = response.data.result.filter(
+              (transaction) =>
+                transaction.to.toLowerCase() ===
+                "0x0000000000000000000000000000000000000000" &&
+                !processedTransactions.has(transaction.hash)
+            );
+        
+            if (newBurnEvents.length === 0) {
+              console.log("No new burn events detected.");
+              return;
+            }
+        
+            newBurnEvents.forEach((transaction) => {
+              processedTransactions.add(transaction.hash);
+              const amountBurned =
+                Number(transaction.value) / 10 ** tokenDecimals;
+              const txHash = transaction.hash;
+              const txHashLink = `https://basescan.org/tx/${txHash}`;
+              const chartLink = "https://dexscreener.com/base/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc";
+              const percentBurned =
+                ((initialSupply - totalBurnedAmountt) / initialSupply) * 100;
+              totalBurnedAmountt += amountBurned;
+              const burnMessage = `VOID Burned!\n\n💀💀💀💀💀\n🔥 Burned: ${amountBurned.toFixed(
+                3
+              )} VOID\nPercent Burned: ${percentBurned.toFixed(
+                2
+              )}%\n🔎 <a href="${chartLink}">Chart</a> | <a href="${txHashLink}">TX Hash</a>`;
+        
+              const burnanimationMessageOptions = {
+                caption: burnMessage,
+                parse_mode: "HTML",
+              };
+              sendAnimationMessage(burnAnimation, burnanimationMessageOptions);
+        
+              saveProcessedTransactions();
+            });
+          } catch (error) {
+            console.error("Error detecting token burn event:", error);
           }
-        });
-        if (response.data.status !== "1") {
-          throw new Error("Failed to retrieve token transactions");
         }
-
-    await updateTotalBurnedAmount();
-
-    const newBurnEvents = response.data.result.filter(
-      (transaction) =>
-        transaction.to.toLowerCase() ===
-          "0x0000000000000000000000000000000000000000" &&
-        !processedTransactions.has(transaction.hash)
-    );
-
-    if (newBurnEvents.length === 0) {
-      console.log("No new burn events detected.");
-      return;
-    }
-
-    newBurnEvents.forEach((transaction) => {
-      processedTransactions.add(transaction.hash);
-      const amountBurned =
-        Number(transaction.value) / 10 ** tokenDecimals;
-      const txHash = transaction.hash;
-      const txHashLink = `https://basescan.org/tx/${txHash}`;
-      const chartLink = "https://dexscreener.com/base/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc";
-      const percentBurned =
-        ((initialSupply - totalBurnedAmountt) / initialSupply) * 100;
-        totalBurnedAmountt += amountBurned;
-      const burnMessage = `VOID Burned!\n\n💀💀💀💀💀\n🔥 Burned: ${amountBurned.toFixed(
-        3
-      )} VOID\nPercent Burned: ${percentBurned.toFixed(
-        2
-      )}%\n🔎 <a href="${chartLink}">Chart</a> | <a href="${txHashLink}">TX Hash</a>`;
-
-      const burnanimationMessageOptions = {
-        caption: burnMessage,
-        parse_mode: "HTML",
-      };
-      sendAnimationMessage(burnAnimation, burnanimationMessageOptions, true);
-
-      saveProcessedTransactions();
-    });
-  } catch (error) {
-    console.error("Error detecting token burn event:", error);
-  }
-}
-function scheduleNextCall(callback, delay) {
-  setTimeout(async () => {
-      try {
-          await callback();
-      } finally {
-          scheduleNextCall(callback, delay);
-      }
-  }, delay);
-}
-let totalBurnedAmount = 0;
-let totalBurnedAmountt = 0;
+        function scheduleNextCall(callback, delay) {
+          setTimeout(() => {
+            callback().finally(() => {
+              scheduleNextCall(callback, delay);
+            });
+          }, delay);
+        }
+        let totalBurnedAmount = 0;
+        let totalBurnedAmountt = 0;
 
 async function updateTotalBurnedAmount() {
   try {
-    const apiUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
-    const response = await axios.get(apiUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
-      }
-    });
+    const apiUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc&address=0x0000000000000000000000000000000000000000&apikey=${ETHERSCAN_API_KEY}`;
+    const response = await axios.get(apiUrl);
 
     if (response.data.status === "1") {
       const balance = Number(response.data.result) / 10 ** tokenDecimals;
@@ -458,7 +433,7 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 60000);
+scheduleNextCall(detectVoidBurnEvent, 5000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
