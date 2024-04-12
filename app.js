@@ -315,7 +315,15 @@ async function detectUniswapLatestTransaction() {
             }
 
             const balanceDetailsUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc&address=${fromAddress}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
-            const balanceDetailResponse = await axios.get(balanceDetailsUrl);
+
+            const config = {
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+              },
+              withCredentials: true
+            };
+        
+            const balanceDetailResponse = await axios.get(balanceDetailsUrl, config);
 
             if (balanceDetailResponse.data.status === "1") {
               const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
@@ -358,10 +366,19 @@ ${isArbitrageTransaction
     }
   });
 }
-        async function detectVoidBurnEvent() {
-          try {
-            const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc&address=0x0000000000000000000000000000000000000000&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
-            const response = await axios.get(apiUrl);
+
+async function detectVoidBurnEvent() {
+  try {
+    const config = {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+      },
+      withCredentials: true
+    };
+
+    const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc&address=0x0000000000000000000000000000000000000000&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
+    const response = await axios.get(apiUrl, config);
+
             if (response.data.status !== "1") {
               throw new Error("Failed to retrieve token transactions");
             }
@@ -418,10 +435,17 @@ ${isArbitrageTransaction
         let totalBurnedAmount = 0;
         let totalBurnedAmountt = 0;
 
-async function updateTotalBurnedAmount() {
-  try {
-    const apiUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc&address=0x0000000000000000000000000000000000000000&apikey=${ETHERSCAN_API_KEY}`;
-    const response = await axios.get(apiUrl);
+        async function updateTotalBurnedAmount() {
+          try {
+            const config = {
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+              },
+              withCredentials: true
+            };
+        
+            const apiUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc&address=0x0000000000000000000000000000000000000000&apikey=${ETHERSCAN_API_KEY}`;
+            const response = await axios.get(apiUrl, config);
 
     if (response.data.status === "1") {
       const balance = Number(response.data.result) / 10 ** tokenDecimals;
