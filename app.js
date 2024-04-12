@@ -304,10 +304,10 @@ async function detectUniswapLatestTransaction() {
           const percentBurned = totalBurnedAmount / initialSupply * 100;
           const transactionvalue = transaction.attributes.volume_in_usd;
           const marketCap = voidPrice * totalSupply;
-          const baseEmojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 150), 90);
+          const baseEmojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 125), 90);
           const emojiCount = isBuy ? baseEmojiCount : Math.floor(baseEmojiCount);
 
-          if ((isBuy && Number(transaction.attributes.volume_in_usd > 150) || !isBuy && Number(transaction.attributes.volume_in_usd > 4500))) {
+          if ((isBuy && Number(transaction.attributes.volume_in_usd > 250) || !isBuy && Number(transaction.attributes.volume_in_usd > 5000))) {
             let emojiString = "";
 
             for (let i = 0; i < emojiCount; i++) {
