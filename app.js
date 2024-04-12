@@ -318,7 +318,7 @@ async function detectUniswapLatestTransaction() {
 
             const config = {
               headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+                'User-Agent': 'Mozilla/5.0 (Windows; Windows NT 10.0; x64) AppleWebKit/603.37 (KHTML, like Gecko) Chrome/53.0.2093.181 Safari/534.4 Edge/12.40330'
               },
               withCredentials: true
             };
@@ -371,7 +371,7 @@ async function detectVoidBurnEvent() {
   try {
     const config = {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+        'User-Agent': 'Mozilla/5.0 (Windows; Windows NT 10.0; x64) AppleWebKit/603.37 (KHTML, like Gecko) Chrome/53.0.2093.181 Safari/534.4 Edge/12.40330'
       },
       withCredentials: true
     };
@@ -439,7 +439,7 @@ async function detectVoidBurnEvent() {
           try {
             const config = {
               headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+                'User-Agent': 'Mozilla/5.0 (Windows; Windows NT 10.0; x64) AppleWebKit/603.37 (KHTML, like Gecko) Chrome/53.0.2093.181 Safari/534.4 Edge/12.40330'
               },
               withCredentials: true
             };
@@ -457,7 +457,7 @@ async function detectVoidBurnEvent() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 5000);
+scheduleNextCall(detectVoidBurnEvent, 30000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
