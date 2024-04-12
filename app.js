@@ -105,7 +105,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2000);
+    }, 1000);
   }
 }
 async function sendMessageFromQueue() {
@@ -124,7 +124,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2000);
+    }, 1000);
   }
 }
 
@@ -333,8 +333,9 @@ async function detectUniswapLatestTransaction() {
             if (balanceDetailResponse.data.status === "1") {
               const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
               const isArbitrageTransaction = isBuy && voidBalance === 0;
-              const imageUrl = isArbitrageTransaction ? "https://voidonbase.com/arbitrage.jpg" : getRankImageUrl(voidRank);
               const voidRank = getVoidRank(voidBalance);
+              const imageUrl = isArbitrageTransaction ? "https://voidonbase.com/arbitrage.jpg" : getRankImageUrl(voidRank);
+
 
               const message = `${emojiString}
 💸 ${isBuy
@@ -444,7 +445,7 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 20000);
+scheduleNextCall(detectVoidBurnEvent, 10000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
