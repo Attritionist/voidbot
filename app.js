@@ -5,6 +5,7 @@ require("dotenv").config();
 const TELEGRAM_CHAT_ID = process.env["TELEGRAM_CHAT_ID"];
 const TELEGRAM_BOT_TOKEN = process.env["TELEGRAM_BOT_TOKEN"];
 const ETHERSCAN_API_KEY = process.env["ETHERSCAN_API_KEY"];
+const TOKEN_CONTRACT = process.env["TOKEN_CONTRACT"];
 const COINGECKO_API = process.env["COINGECKO_API"];
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
@@ -326,8 +327,11 @@ async function detectUniswapLatestTransaction() {
               emojiString += isBuy ? "🟣🔥" : "🔴🤡";
             }
 
-            const balanceDetailsUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc&address=${fromAddress}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
-            const balanceDetailResponse = await axios.get(balanceDetailsUrl);
+            const balanceDetailsUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${TOKEN_CONTRACT}&address=${fromAddress}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
+            const balanceDetailResponse = await axios.get(balanceDetailsUrl, {
+              headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
+              }});
 
             if (balanceDetailResponse.data.status === "1") {
               const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
@@ -371,8 +375,12 @@ ${isArbitrageTransaction
   });
 }
 async function detectVoidBurnEvent() {
-  try {  const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc&address=0x0000000000000000000000000000000000000000&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
-        const response = await axios.get(apiUrl); 
+  try {  const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
+        const response = await axios.get(apiUrl, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
+          }
+        });
         if (response.data.status !== "1") {
           throw new Error("Failed to retrieve token transactions");
         }
@@ -420,10 +428,12 @@ async function detectVoidBurnEvent() {
   }
 }
 function scheduleNextCall(callback, delay) {
-  setTimeout(() => {
-      callback().finally(() => {
+  setTimeout(async () => {
+      try {
+          await callback();
+      } finally {
           scheduleNextCall(callback, delay);
-      });
+      }
   }, delay);
 }
 let totalBurnedAmount = 0;
@@ -431,8 +441,12 @@ let totalBurnedAmountt = 0;
 
 async function updateTotalBurnedAmount() {
   try {
-    const apiUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc&address=0x0000000000000000000000000000000000000000&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
-    const response = await axios.get(apiUrl);
+    const apiUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=${TOKEN_CONTRACT}&address=0x0000000000000000000000000000000000000000&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
+    const response = await axios.get(apiUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
+      }
+    });
 
     if (response.data.status === "1") {
       const balance = Number(response.data.result) / 10 ** tokenDecimals;
@@ -444,7 +458,7 @@ async function updateTotalBurnedAmount() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 120000);
+scheduleNextCall(detectVoidBurnEvent, 60000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
