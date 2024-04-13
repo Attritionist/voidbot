@@ -307,7 +307,7 @@ async function detectUniswapLatestTransaction() {
           const baseEmojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 125), 90);
           const emojiCount = isBuy ? baseEmojiCount : Math.floor(baseEmojiCount);
 
-          if ((isBuy && Number(transaction.attributes.volume_in_usd > 250) || !isBuy && Number(transaction.attributes.volume_in_usd > 5000))) {
+          if ((isBuy && Number(transaction.attributes.volume_in_usd > 500) || !isBuy && Number(transaction.attributes.volume_in_usd > 5000))) {
             let emojiString = "";
 
             for (let i = 0; i < emojiCount; i++) {
@@ -457,7 +457,7 @@ async function detectVoidBurnEvent() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 30000);
+scheduleNextCall(detectVoidBurnEvent, 15000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
