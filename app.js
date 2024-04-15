@@ -101,7 +101,6 @@ async function sendBurnFromQueue() {
       message.resolve(sentMessage);
     } catch (error) {
       console.error("Error sending message:", error);
-      message.reject(error);
     }
     setTimeout(() => {
       isSendingMessage = false;
