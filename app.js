@@ -311,6 +311,13 @@ async function detectUniswapLatestTransaction() {
           const baseEmojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 125), 90);
           const emojiCount = isBuy ? baseEmojiCount : Math.floor(baseEmojiCount);
 
+          if ((isBuy && Number(transaction.attributes.volume_in_usd > 1000) || !isBuy && Number(transaction.attributes.volume_in_usd > 10000))) {
+            let emojiString = "";
+
+            for (let i = 0; i < emojiCount; i++) {
+              emojiString += isBuy ? "🟣🔥" : "🔴🤡";
+            }
+
             const balanceDetailsUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc&address=${fromAddress}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
 
             const config = {
@@ -324,17 +331,10 @@ async function detectUniswapLatestTransaction() {
 
             if (balanceDetailResponse.data.status === "1") {
               const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
-              const isNormalTransaction = isBuy && voidBalance >= 1000;
               const isArbitrageTransaction = isBuy && voidBalance <= 1;
               const voidRank = getVoidRank(voidBalance);
               const imageUrl = isArbitrageTransaction ? "https://voidonbase.com/arbitrage.jpg" : getRankImageUrl(voidRank);
 
-              if ((isArbitrageTransaction && Number(transaction.attributes.volume_in_usd > 750) || !isBuy && Number(transaction.attributes.volume_in_usd > 10000))) {
-                let emojiString = "";
-    
-                for (let i = 0; i < emojiCount; i++) {
-                  emojiString += isBuy ? "🟣🔥" : "🔴🤡";
-                }
 
               const message = `${emojiString}
 💸 ${isBuy
@@ -461,7 +461,7 @@ async function detectVoidBurnEvent() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 20000);
+scheduleNextCall(detectVoidBurnEvent, 15000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
