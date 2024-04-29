@@ -324,11 +324,12 @@ async function detectUniswapLatestTransaction() {
 
             if (balanceDetailResponse.data.status === "1") {
               const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
+              const isNormalTransaction = isBuy && voidBalance >= 1000
               const isArbitrageTransaction = isBuy && voidBalance <= 1;
               const voidRank = getVoidRank(voidBalance);
               const imageUrl = isArbitrageTransaction ? "https://voidonbase.com/arbitrage.jpg" : getRankImageUrl(voidRank);
 
-              if ((isBuy && Number(transaction.attributes.volume_in_usd > 250) || isArbitrageTransaction && Number(transaction.attributes.volume_in_usd > 1000) || !isBuy && Number(transaction.attributes.volume_in_usd > 10000))) {
+              if ((isNormalTransaction && Number(transaction.attributes.volume_in_usd > 250) || isArbitrageTransaction && Number(transaction.attributes.volume_in_usd > 1000) || !isBuy && Number(transaction.attributes.volume_in_usd > 10000))) {
                 let emojiString = "";
     
                 for (let i = 0; i < emojiCount; i++) {
