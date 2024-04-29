@@ -329,7 +329,7 @@ async function detectUniswapLatestTransaction() {
               const voidRank = getVoidRank(voidBalance);
               const imageUrl = isArbitrageTransaction ? "https://voidonbase.com/arbitrage.jpg" : getRankImageUrl(voidRank);
 
-              if ((isNormalTransaction && Number(transaction.attributes.volume_in_usd > 250) || isArbitrageTransaction && Number(transaction.attributes.volume_in_usd > 1000) || !isBuy && Number(transaction.attributes.volume_in_usd > 10000))) {
+              if ((isArbitrageTransaction && Number(transaction.attributes.volume_in_usd > 750) || !isBuy && Number(transaction.attributes.volume_in_usd > 10000))) {
                 let emojiString = "";
     
                 for (let i = 0; i < emojiCount; i++) {
