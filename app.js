@@ -314,7 +314,7 @@ async function detectUniswapLatestTransaction() {
 
             const config = {
               headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows; Windows NT 10.0; x64) AppleWebKit/603.37 (KHTML, like Gecko) Chrome/53.0.2093.181 Safari/534.4 Edge/12.40330'
+                'User-Agent': 'Mozilla/5.0 (Windows; Windows NT 10.4; WOW64; en-US) AppleWebKit/537.20 (KHTML, like Gecko) Chrome/53.0.3086.259 Safari/602.4 Edge/12.29796'
               },
               withCredentials: true
             };
@@ -323,11 +323,12 @@ async function detectUniswapLatestTransaction() {
 
             if (balanceDetailResponse.data.status === "1") {
               const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
-              const isArbitrageTransaction = isBuy && voidBalance <= 1;
+              const isArbitrageTransaction = isBuy && voidBalance < 1;
+              const isNormalTransaction = isBuy && voidBalance > 1;
               const voidRank = getVoidRank(voidBalance);
               const imageUrl = isArbitrageTransaction ? "https://voidonbase.com/arbitrage.jpg" : getRankImageUrl(voidRank);
 
- if ((isBuy && voidBalance < 1 && Number(transaction.attributes.volume_in_usd > 1000)) || (isBuy && voidBalance > 1 && Number(transaction.attributes.volume_in_usd > 250)) || (!isBuy && Number(transaction.attributes.volume_in_usd > 10000))) {
+ if ((isArbitrageTransaction && Number(transaction.attributes.volume_in_usd > 1000)) || (isNormalTransaction && Number(transaction.attributes.volume_in_usd > 250)) || (!isBuy && Number(transaction.attributes.volume_in_usd > 10000))) {
             let emojiString = "";
 
             for (let i = 0; i < emojiCount; i++) {
@@ -373,7 +374,7 @@ async function detectVoidBurnEvent() {
   try {
     const config = {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows; Windows NT 10.0; x64) AppleWebKit/603.37 (KHTML, like Gecko) Chrome/53.0.2093.181 Safari/534.4 Edge/12.40330'
+        'User-Agent': 'Mozilla/5.0 (Windows; Windows NT 10.4; WOW64; en-US) AppleWebKit/537.20 (KHTML, like Gecko) Chrome/53.0.3086.259 Safari/602.4 Edge/12.29796'
       },
       withCredentials: true
     };
@@ -441,7 +442,7 @@ async function detectVoidBurnEvent() {
           try {
             const config = {
               headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows; Windows NT 10.0; x64) AppleWebKit/603.37 (KHTML, like Gecko) Chrome/53.0.2093.181 Safari/534.4 Edge/12.40330'
+                'User-Agent': 'Mozilla/5.0 (Windows; Windows NT 10.4; WOW64; en-US) AppleWebKit/537.20 (KHTML, like Gecko) Chrome/53.0.3086.259 Safari/602.4 Edge/12.29796'
               },
               withCredentials: true
             };
@@ -459,7 +460,7 @@ async function detectVoidBurnEvent() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 20000);
+scheduleNextCall(detectVoidBurnEvent, 30000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
