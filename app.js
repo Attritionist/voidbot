@@ -310,11 +310,18 @@ async function detectUniswapLatestTransaction() {
           const baseEmojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 125), 90);
           const emojiCount = isBuy ? baseEmojiCount : Math.floor(baseEmojiCount);
 
+          if ((isBuy && Number(transaction.attributes.volume_in_usd > 500) || !isBuy && Number(transaction.attributes.volume_in_usd > 10000))) {
+            let emojiString = "";
+
+            for (let i = 0; i < emojiCount; i++) {
+              emojiString += isBuy ? "🟣🔥" : "🔴🤡";
+            }
+
             const balanceDetailsUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc&address=${fromAddress}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
 
             const config = {
               headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows; Windows NT 10.4; WOW64; en-US) AppleWebKit/537.20 (KHTML, like Gecko) Chrome/53.0.3086.259 Safari/602.4 Edge/12.29796'
+                'User-Agent': 'Mozilla/5.0 (Windows; Windows NT 10.0; x64) AppleWebKit/603.37 (KHTML, like Gecko) Chrome/53.0.2093.181 Safari/534.4 Edge/12.40330'
               },
               withCredentials: true
             };
@@ -323,17 +330,10 @@ async function detectUniswapLatestTransaction() {
 
             if (balanceDetailResponse.data.status === "1") {
               const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
-              const isArbitrageTransaction = isBuy && voidBalance < 1;
-              const isNormalTransaction = isBuy && voidBalance > 1;
+              const isArbitrageTransaction = isBuy && voidBalance <= 1;
               const voidRank = getVoidRank(voidBalance);
               const imageUrl = isArbitrageTransaction ? "https://voidonbase.com/arbitrage.jpg" : getRankImageUrl(voidRank);
 
- if ((isArbitrageTransaction && Number(transaction.attributes.volume_in_usd > 1000)) || (isNormalTransaction && Number(transaction.attributes.volume_in_usd > 250)) || (!isBuy && Number(transaction.attributes.volume_in_usd > 10000))) {
-            let emojiString = "";
-
-            for (let i = 0; i < emojiCount; i++) {
-              emojiString += isBuy ? "🟣🔥" : "🔴🤡";
-            }
 
               const message = `${emojiString}
 💸 ${isBuy
@@ -374,7 +374,7 @@ async function detectVoidBurnEvent() {
   try {
     const config = {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows; Windows NT 10.4; WOW64; en-US) AppleWebKit/537.20 (KHTML, like Gecko) Chrome/53.0.3086.259 Safari/602.4 Edge/12.29796'
+        'User-Agent': 'Mozilla/5.0 (Windows; Windows NT 10.0; x64) AppleWebKit/603.37 (KHTML, like Gecko) Chrome/53.0.2093.181 Safari/534.4 Edge/12.40330'
       },
       withCredentials: true
     };
@@ -442,7 +442,7 @@ async function detectVoidBurnEvent() {
           try {
             const config = {
               headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows; Windows NT 10.4; WOW64; en-US) AppleWebKit/537.20 (KHTML, like Gecko) Chrome/53.0.3086.259 Safari/602.4 Edge/12.29796'
+                'User-Agent': 'Mozilla/5.0 (Windows; Windows NT 10.0; x64) AppleWebKit/603.37 (KHTML, like Gecko) Chrome/53.0.2093.181 Safari/534.4 Edge/12.40330'
               },
               withCredentials: true
             };
@@ -460,7 +460,7 @@ async function detectVoidBurnEvent() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 30000);
+scheduleNextCall(detectVoidBurnEvent, 20000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
