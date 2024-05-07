@@ -335,7 +335,7 @@ async function detectUniswapLatestTransaction() {
       const imageUrl = getRankImageUrl(voidRank);
 
       const message = `${emojiString}
-💸 Bought ${amountTransferred.toFixed(2)} VOID ($${transactionvalue.toFixed(2)})  (<a href="${addressLink}">View Address</a>)
+💸 Bought ${amountTransferred.toFixed(2)} VOID ($${transactionvalue}) (<a href="${addressLink}">View Address</a>)
 🟣 VOID Price: $${voidPrice.toFixed(5)}
 💰 Market Cap: $${marketCap.toFixed(0)}
 🔥 Percent Burned: ${percentBurned.toFixed(3)}%
@@ -365,7 +365,7 @@ async function detectUniswapLatestTransaction() {
       const imageUrl = "https://voidonbase.com/arbitrage.jpg";
 
       const message = `${emojiString}
-💸 Bought ${amountTransferred.toFixed(2)} VOID ($${transactionvalue.toFixed(2)})  (<a href="${addressLink}">View Address</a>)
+💸 Bought ${amountTransferred.toFixed(2)} VOID ($${transactionvalue}) (<a href="${addressLink}">View Address</a>)
 🟣 VOID Price: $${voidPrice.toFixed(5)}
 💰 Market Cap: $${marketCap.toFixed(0)}
 🔥 Percent Burned: ${percentBurned.toFixed(3)}%
@@ -394,7 +394,7 @@ async function detectUniswapLatestTransaction() {
       const imageUrl = getRankImageUrl(voidRank);
 
       const message = `${emojiString}
-💸 Sold ${amountTransferred.toFixed(2)} VOID ($${transactionvalue.toFixed(2)}) (<a href="${addressLink}">View Address</a>)
+💸 Sold ${amountTransferred.toFixed(2)} VOID ($${transactionvalue}) (<a href="${addressLink}">View Address</a>)
 🟣 VOID Price: $${voidPrice.toFixed(5)}
 💰 Market Cap: $${marketCap.toFixed(0)}
 🔥 Percent Burned: ${percentBurned.toFixed(3)}%
