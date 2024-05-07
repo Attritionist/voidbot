@@ -342,7 +342,9 @@ async function detectUniswapLatestTransaction() {
 <a href="${chartLink}">📈 Chart</a>
 <a href="${txHashLink}">💱 TX Hash</a>
 ⚖️ Remaining VOID Balance: ${voidBalance.toFixed(5)}
-🛡️ VOID Rank: ${voidRank}`;
+🛡️ VOID Rank: ${voidRank}
+🚰 Pool: ${POOL_MAPPING[poolAddress]}`;
+
 
       const voidMessageOptions = {
         caption: message,
@@ -369,12 +371,13 @@ async function detectUniswapLatestTransaction() {
 🔥 Percent Burned: ${percentBurned.toFixed(3)}%
 <a href="${chartLink}">📈 Chart</a>
 <a href="${txHashLink}">💱 TX Hash</a>
-⚠️ Arbitrage Transaction`;
+⚠️ Arbitrage Transaction
+🚰 Pool: ${POOL_MAPPING[poolAddress]}`;
 
-      const voidMessageOptions = {
-        caption: message,
-        parse_mode: "HTML",
-      };
+  const voidMessageOptions = {
+    caption: message,
+    parse_mode: "HTML",
+  };
 
       sendPhotoMessage(imageUrl, voidMessageOptions);
       processedUniswapTransactions.add(transaction.id);
@@ -398,7 +401,8 @@ async function detectUniswapLatestTransaction() {
 <a href="${chartLink}">📈 Chart</a>
 <a href="${txHashLink}">💱 TX Hash</a>
 ⚖️ Remaining VOID Balance: ${voidBalance.toFixed(5)}
-🛡️ VOID Rank: ${voidRank}`;
+🛡️ VOID Rank: ${voidRank}
+🚰 Pool: ${POOL_MAPPING[poolAddress]}`;
 
       const voidMessageOptions = {
         caption: message,
