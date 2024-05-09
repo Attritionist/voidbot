@@ -18,7 +18,7 @@ let processedUniswapTransactions = new Set();
 
 const POOL_MAPPING = {
   "0xb14e941d34d61ae251ccc08ac15b8455ae9f60a5": "VOID/ETH",
-  "0x074b09f7df012eaa0dc39ea0d162544a9419bd4f": "VOID/USDC",
+  "0x6d8b0d8825f8c8a885a2809fbf03983a9430f999": "VOID/CIRCLE",
   "0xa2b01d461b811096eab039f0283655326440e78f": "VOID/DOGINME",
   "0xe5fe953ca480d0a7b22ed664a7370a36038c13ae": "VOID/TOSHI",
   "0xf2de7d73e8e56822afdf19fd08d999c78abd933b": "TYBG/VOID",
