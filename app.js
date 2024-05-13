@@ -75,7 +75,7 @@ setInterval(async () => {
     currentVoidUsdPrice = priceInfo.voidPrice;
     console.log(`Updated current VOID USD price to: ${currentVoidUsdPrice}`);
   }
-}, 60000);
+}, 48000);
 
 let currentVoidUsdPrice = null;
 
@@ -512,7 +512,7 @@ async function detectVoidBurnEvent() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 30000);
+scheduleNextCall(detectVoidBurnEvent, 24000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
@@ -542,5 +542,5 @@ const fetchInitialUniswapTransactions = async () => {
 fetchInitialUniswapTransactions().catch((error) => {
   console.error("Error fetching initial Uniswap transactions:", error);
 }).then(() => {
-  scheduleNextCall(detectUniswapLatestTransaction, 60000);
+  scheduleNextCall(detectUniswapLatestTransaction, 48000);
 });
