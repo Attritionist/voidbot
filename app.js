@@ -20,6 +20,7 @@ const POOL_MAPPING = {
   "0xb14e941d34d61ae251ccc08ac15b8455ae9f60a5": "VOID/ETH",
   "0x6d8b0d8825f8c8a885a2809fbf03983a9430f999": "VOID/CIRCLE",
   "0xa2b01d461b811096eab039f0283655326440e78f": "VOID/DOGINME",
+  "0x9bfe8d3cef0a5487b5eb0468e33caf5c2b2a2b81": "VOID/SPARTANS",
   "0xe5fe953ca480d0a7b22ed664a7370a36038c13ae": "VOID/TOSHI",
   "0xf2de7d73e8e56822afdf19fd08d999c78abd933b": "TYBG/VOID",
   "0x66fa42cfd1789aa7f87c1ef988bf04cb145c9465": "VOID/AERO",
@@ -75,7 +76,7 @@ setInterval(async () => {
     currentVoidUsdPrice = priceInfo.voidPrice;
     console.log(`Updated current VOID USD price to: ${currentVoidUsdPrice}`);
   }
-}, 48000);
+}, 60000);
 
 let currentVoidUsdPrice = null;
 
@@ -512,7 +513,7 @@ async function detectVoidBurnEvent() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 24000);
+scheduleNextCall(detectVoidBurnEvent, 30000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
@@ -542,5 +543,5 @@ const fetchInitialUniswapTransactions = async () => {
 fetchInitialUniswapTransactions().catch((error) => {
   console.error("Error fetching initial Uniswap transactions:", error);
 }).then(() => {
-  scheduleNextCall(detectUniswapLatestTransaction, 48000);
+  scheduleNextCall(detectUniswapLatestTransaction, 45000);
 });
