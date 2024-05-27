@@ -541,5 +541,5 @@ const fetchInitialUniswapTransactions = async () => {
 fetchInitialUniswapTransactions().catch((error) => {
   console.error("Error fetching initial Uniswap transactions:", error);
 }).then(() => {
-  scheduleNextCall(detectUniswapLatestTransaction, 45000);
+  scheduleNextCall(detectUniswapLatestTransaction, 40000);
 });
