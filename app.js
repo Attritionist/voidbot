@@ -10,7 +10,7 @@ const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
 const initialSupply = 100000000;
 const fs = require("fs");
-const burnAnimation = "https://voidonbase.com/burn.jpg";
+const burnAnimation = "https://voidonbase.com/burnn.jpg";
 
 const processedTransactionsFilePath = "processed_transactions.json";
 let processedTransactions = new Set();
