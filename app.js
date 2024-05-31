@@ -22,13 +22,17 @@ const POOL_MAPPING = {
   "0xa2b01d461b811096eab039f0283655326440e78f": "VOID/DOGINME",
   "0xe5fe953ca480d0a7b22ed664a7370a36038c13ae": "VOID/TOSHI",
   "0xf2de7d73e8e56822afdf19fd08d999c78abd933b": "TYBG/VOID",
+  "0x53a631150d7cbcc1d1c125c6c14369612c93c7b3": "BTCB/VOID",
   "0x66fa42cfd1789aa7f87c1ef988bf04cb145c9465": "VOID/AERO",
   "0x1f43031a6294b9c2219887c9e9f5b3671433df3c": "VOID/DEGEN",
   "0x7377ff4f6ac21c1be5d943482b3c439d080f65c1": "VOID/FUNGI",
   "0x150e37ba1847392d71d05abc129ca1fc8bc7e9a5": "VOID/BRETT"
 };
 
-const REVERSED_POOLS = ["0xf2de7d73e8e56822afdf19fd08d999c78abd933b"]
+const REVERSED_POOLS = [
+    "0xf2de7d73e8e56822afdf19fd08d999c78abd933b",
+    "0x53a631150d7cbcc1d1c125c6c14369612c93c7b3"
+];
 
 if (fs.existsSync(processedTransactionsFilePath)) {
   const data = fs.readFileSync(processedTransactionsFilePath, "utf-8");
@@ -95,7 +99,7 @@ async function sendBurnFromQueue() {
       const sentMessage = await bot.sendAnimation(
         TELEGRAM_CHAT_ID,
         message.animation,
-        message.options
+        { ...message.options, message_effect_id: null, show_caption_above_media: true }
       );
       message.resolve(sentMessage);
     } catch (error) {
@@ -103,8 +107,8 @@ async function sendBurnFromQueue() {
     }
     setTimeout(() => {
       isSendingMessage = false;
-      sendMessageFromQueue();
-    }, 2000);
+      sendBurnFromQueue();
+    }, 1000);
   }
 }
 async function sendMessageFromQueue() {
@@ -123,7 +127,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2000);
+    }, 2500);
   }
 }
 
@@ -511,7 +515,7 @@ async function detectVoidBurnEvent() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 30000);
+scheduleNextCall(detectVoidBurnEvent, 20000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
