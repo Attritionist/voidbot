@@ -435,7 +435,7 @@ async function detectVoidBurnEvent() {
       withCredentials: true
     };
 
-    const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc&address=0x0000000000000000000000000000000000000000&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
+    const apiUrl = `https://api.basescan.org/api?module=account&action=tokentx&contractaddress=0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc&address=0x0000000000000000000000000000000000000000&page=1&offset=1&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
     const response = await axios.get(apiUrl, config);
 
             if (response.data.status !== "1") {
