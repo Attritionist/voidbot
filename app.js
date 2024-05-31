@@ -9,8 +9,9 @@ const COINGECKO_API = process.env["COINGECKO_API"];
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
 const initialSupply = 100000000;
-const burnAnimation = "https://voidonbase.com/burn.gif";
 const fs = require("fs");
+const burnAnimation = "https://voidonbase.com/burn.jpg";
+
 const processedTransactionsFilePath = "processed_transactions.json";
 let processedTransactions = new Set();
 
@@ -96,21 +97,21 @@ async function sendBurnFromQueue() {
     isSendingMessage = true;
     const message = messageQueue.shift();
     try {
-      const sentMessage = await bot.sendAnimation(
+      await bot.sendPhoto(
         TELEGRAM_CHAT_ID,
-        message.animation,
-        { ...message.options, message_effect_id: null, show_caption_above_media: true }
+        message.photo,
+        message.options
       );
-      message.resolve(sentMessage);
     } catch (error) {
       console.error("Error sending message:", error);
     }
     setTimeout(() => {
       isSendingMessage = false;
-      sendBurnFromQueue();
-    }, 1000);
+      sendAnimationMessage();
+    }, 2000);
   }
 }
+
 async function sendMessageFromQueue() {
   if (messageQueue.length > 0 && !isSendingMessage) {
     isSendingMessage = true;
@@ -127,7 +128,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2500);
+    }, 2000);
   }
 }
 
@@ -138,8 +139,8 @@ sendMessageFromQueue();
 
   }
 
-async function sendAnimationMessage(animation, options) {
-   addToBurnQueue({ animation, options });
+async function sendAnimationMessage(photo, options) {
+   addToBurnQueue({ photo, options });
 sendBurnFromQueue();
   
   
