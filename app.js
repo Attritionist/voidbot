@@ -22,6 +22,7 @@ const POOL_MAPPING = {
   "0x6d8b0d8825f8c8a885a2809fbf03983a9430f999": "VOID/CIRCLE",
   "0xa2b01d461b811096eab039f0283655326440e78f": "VOID/DOGINME",
   "0x263ea0a3cf3845fc52a30c6e81dbd985b7290fbf": "VOID/NORMIE",
+  "0x53a631150d7cbcc1d1c125c6c14369612c93c7b3": "BTCB/VOID",
   "0xe5fe953ca480d0a7b22ed664a7370a36038c13ae": "VOID/TOSHI",
   "0xf2de7d73e8e56822afdf19fd08d999c78abd933b": "TYBG/VOID",
   "0x66fa42cfd1789aa7f87c1ef988bf04cb145c9465": "VOID/AERO",
@@ -30,7 +31,8 @@ const POOL_MAPPING = {
 };
 
 const REVERSED_POOLS = [
-    "0xf2de7d73e8e56822afdf19fd08d999c78abd933b" 
+    "0xf2de7d73e8e56822afdf19fd08d999c78abd933b",
+    "0x53a631150d7cbcc1d1c125c6c14369612c93c7b3"
 ];
 
 if (fs.existsSync(processedTransactionsFilePath)) {
@@ -548,5 +550,5 @@ const fetchInitialUniswapTransactions = async () => {
 fetchInitialUniswapTransactions().catch((error) => {
   console.error("Error fetching initial Uniswap transactions:", error);
 }).then(() => {
-  scheduleNextCall(detectUniswapLatestTransaction, 40000);
+  scheduleNextCall(detectUniswapLatestTransaction, 45000);
 });
