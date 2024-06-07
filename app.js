@@ -328,9 +328,9 @@ async function detectUniswapLatestTransaction() {
   if (balanceDetailResponse.data.status === "1") {
     const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
 
-    if (isBuy && voidBalance >= 1000 && Number(transaction.attributes.volume_in_usd) > 125) {
+    if (isBuy && voidBalance > 1500 && Number(transaction.attributes.volume_in_usd) > 100) {
       // Handle normal buy transaction
-      const emojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 125), 90);
+      const emojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 100), 90);
       let emojiString = "";
 
       for (let i = 0; i < emojiCount; i++) {
@@ -359,9 +359,9 @@ async function detectUniswapLatestTransaction() {
 
       sendPhotoMessage(imageUrl, voidMessageOptions);
       processedUniswapTransactions.add(transaction.id);
-    } else if (isBuy && voidBalance < 1000 && Number(transaction.attributes.volume_in_usd) > 750) {
+    } else if (isBuy && voidBalance < 1500 && Number(transaction.attributes.volume_in_usd) > 500) {
       // Handle arbitrage buy transaction
-      const emojiCount = Math.floor(Math.min(Math.ceil(transaction.attributes.volume_in_usd / 125), 90));
+      const emojiCount = Math.floor(Math.min(Math.ceil(transaction.attributes.volume_in_usd / 100), 90));
       let emojiString = "";
 
       for (let i = 0; i < emojiCount; i++) {
@@ -387,7 +387,7 @@ async function detectUniswapLatestTransaction() {
 
       sendPhotoMessage(imageUrl, voidMessageOptions);
       processedUniswapTransactions.add(transaction.id);
-    } else if (!isBuy && Number(transaction.attributes.volume_in_usd) > 7500) {
+    } else if (!isBuy && Number(transaction.attributes.volume_in_usd) > 10000) {
       // Handle sell transaction
       const emojiCount = Math.floor(Math.min(Math.ceil(transaction.attributes.volume_in_usd / 200), 90));
       let emojiString = "";
