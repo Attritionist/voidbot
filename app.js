@@ -81,7 +81,7 @@ setInterval(async () => {
     currentVoidUsdPrice = priceInfo.voidPrice;
     console.log(`Updated current VOID USD price to: ${currentVoidUsdPrice}`);
   }
-}, 60000);
+}, 90000);
 
 let currentVoidUsdPrice = null;
 
@@ -110,7 +110,7 @@ async function sendBurnFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendAnimationMessage();
-    }, 2000);
+    }, 500);
   }
 }
 
@@ -130,7 +130,7 @@ async function sendMessageFromQueue() {
     setTimeout(() => {
       isSendingMessage = false;
       sendMessageFromQueue();
-    }, 2000);
+    }, 500);
   }
 }
 
@@ -334,7 +334,7 @@ async function detectUniswapLatestTransaction() {
 
     if (isBuy && voidBalance > 1500 && Number(transaction.attributes.volume_in_usd) > 100) {
       // Handle normal buy transaction
-      const emojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 100), 90);
+      const emojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 100), 96);
       let emojiString = "";
 
       for (let i = 0; i < emojiCount; i++) {
@@ -365,7 +365,7 @@ async function detectUniswapLatestTransaction() {
       processedUniswapTransactions.add(transaction.id);
     } else if (isBuy && voidBalance < 1500 && Number(transaction.attributes.volume_in_usd) > 500) {
       // Handle arbitrage buy transaction
-      const emojiCount = Math.floor(Math.min(Math.ceil(transaction.attributes.volume_in_usd / 100), 90));
+      const emojiCount = Math.floor(Math.min(Math.ceil(transaction.attributes.volume_in_usd / 100), 96));
       let emojiString = "";
 
       for (let i = 0; i < emojiCount; i++) {
@@ -393,7 +393,7 @@ async function detectUniswapLatestTransaction() {
       processedUniswapTransactions.add(transaction.id);
     } else if (!isBuy && Number(transaction.attributes.volume_in_usd) > 10000) {
       // Handle sell transaction
-      const emojiCount = Math.floor(Math.min(Math.ceil(transaction.attributes.volume_in_usd / 200), 90));
+      const emojiCount = Math.floor(Math.min(Math.ceil(transaction.attributes.volume_in_usd / 200), 96));
       let emojiString = "";
 
       for (let i = 0; i < emojiCount; i++) {
@@ -552,5 +552,5 @@ const fetchInitialUniswapTransactions = async () => {
 fetchInitialUniswapTransactions().catch((error) => {
   console.error("Error fetching initial Uniswap transactions:", error);
 }).then(() => {
-  scheduleNextCall(detectUniswapLatestTransaction, 45000);
+  scheduleNextCall(detectUniswapLatestTransaction, 50000);
 });
