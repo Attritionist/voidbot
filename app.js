@@ -363,7 +363,7 @@ async function detectUniswapLatestTransaction() {
 
       sendPhotoMessage(imageUrl, voidMessageOptions);
       processedUniswapTransactions.add(transaction.id);
-    } else if (isBuy && voidBalance < 1500 && Number(transaction.attributes.volume_in_usd) > 500) {
+    } else if (isBuy && voidBalance < 1500 && Number(transaction.attributes.volume_in_usd) > 1000) {
       // Handle arbitrage buy transaction
       const emojiCount = Math.floor(Math.min(Math.ceil(transaction.attributes.volume_in_usd / 100), 96));
       let emojiString = "";
