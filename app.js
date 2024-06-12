@@ -81,7 +81,7 @@ setInterval(async () => {
     currentVoidUsdPrice = priceInfo.voidPrice;
     console.log(`Updated current VOID USD price to: ${currentVoidUsdPrice}`);
   }
-}, 90000);
+}, 60000);
 
 let currentVoidUsdPrice = null;
 
@@ -552,5 +552,5 @@ const fetchInitialUniswapTransactions = async () => {
 fetchInitialUniswapTransactions().catch((error) => {
   console.error("Error fetching initial Uniswap transactions:", error);
 }).then(() => {
-  scheduleNextCall(detectUniswapLatestTransaction, 60000);
+  scheduleNextCall(detectUniswapLatestTransaction, 50000);
 });
