@@ -24,7 +24,6 @@ const POOL_MAPPING = {
   "0x263ea0a3cf3845fc52a30c6e81dbd985b7290fbf": "VOID/NORMIE",
   "0x15539e7fe9842a53c6fd578345e15ccca80aa253": "VOID/OKAYEG",
   "0x0abf279c2313a1ceb175ad0094a117f27a350aad": "VOID/PONCHO",
-  "0x53a631150d7cbcc1d1c125c6c14369612c93c7b3": "BTCB/VOID",
   "0xe5fe953ca480d0a7b22ed664a7370a36038c13ae": "VOID/TOSHI",
   "0xf2de7d73e8e56822afdf19fd08d999c78abd933b": "TYBG/VOID",
   "0x66fa42cfd1789aa7f87c1ef988bf04cb145c9465": "VOID/AERO",
@@ -34,7 +33,6 @@ const POOL_MAPPING = {
 
 const REVERSED_POOLS = [
     "0xf2de7d73e8e56822afdf19fd08d999c78abd933b",
-    "0x53a631150d7cbcc1d1c125c6c14369612c93c7b3"
 ];
 
 if (fs.existsSync(processedTransactionsFilePath)) {
