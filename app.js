@@ -302,47 +302,47 @@ async function detectUniswapLatestTransaction() {
         return;
       } else {
         transactionsToProcess.forEach(async (transaction) => {
-           const isBuy = transaction.attributes.kind == 'buy';
-  const fromAddress = transaction.attributes.tx_from_address;
-  const addressLink = `https://debank.com/profile/${fromAddress}`;
-  const txHashLink = `https://basescan.org/tx/${transaction.attributes.tx_hash}`;
-  const chartLink = "https://dexscreener.com/base/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc";
-  const amountTransferred = REVERSED_POOLS.includes(poolAddress)
-    ? isBuy ? Number(transaction.attributes.from_token_amount) : Number(transaction.attributes.to_token_amount)
-    : isBuy ? Number(transaction.attributes.to_token_amount) : Number(transaction.attributes.from_token_amount);
+          const isBuy = transaction.attributes.kind == 'buy';
+          const fromAddress = transaction.attributes.tx_from_address;
+          const addressLink = `https://debank.com/profile/${fromAddress}`;
+          const txHashLink = `https://basescan.org/tx/${transaction.attributes.tx_hash}`;
+          const chartLink = "https://dexscreener.com/base/0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc";
+          const amountTransferred = REVERSED_POOLS.includes(poolAddress)
+            ? isBuy ? Number(transaction.attributes.from_token_amount) : Number(transaction.attributes.to_token_amount)
+            : isBuy ? Number(transaction.attributes.to_token_amount) : Number(transaction.attributes.from_token_amount);
 
-  const totalSupply = initialSupply - totalBurnedAmount;
-  const percentBurned = totalBurnedAmount / initialSupply * 100;
-  const transactionvalue = transaction.attributes.volume_in_usd;
-  const marketCap = voidPrice * totalSupply;
+          const totalSupply = initialSupply - totalBurnedAmount;
+          const percentBurned = totalBurnedAmount / initialSupply * 100;
+          const transactionvalue = transaction.attributes.volume_in_usd;
+          const marketCap = voidPrice * totalSupply;
 
-  const balanceDetailsUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc&address=${fromAddress}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
+          const balanceDetailsUrl = `https://api.basescan.org/api?module=account&action=tokenbalance&contractaddress=0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc&address=${fromAddress}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
 
-  const config = {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows; Windows NT 10.0; x64) AppleWebKit/603.37 (KHTML, like Gecko) Chrome/53.0.2093.181 Safari/534.4 Edge/12.40330'
-    },
-    withCredentials: true
-  };
+          const config = {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows; Windows NT 10.0; x64) AppleWebKit/603.37 (KHTML, like Gecko) Chrome/53.0.2093.181 Safari/534.4 Edge/12.40330'
+            },
+            withCredentials: true
+          };
 
-  const balanceDetailResponse = await axios.get(balanceDetailsUrl, config);
+          const balanceDetailResponse = await axios.get(balanceDetailsUrl, config);
 
-  if (balanceDetailResponse.data.status === "1") {
-    const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
+          if (balanceDetailResponse.data.status === "1") {
+            const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
 
-    if (isBuy && voidBalance > 1500 && Number(transaction.attributes.volume_in_usd) > 100) {
-      // Handle normal buy transaction
-      const emojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 100), 96);
-      let emojiString = "";
+            if (isBuy && voidBalance > 1500 && Number(transaction.attributes.volume_in_usd) > 100) {
+              // Handle normal buy transaction
+              const emojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 100), 96);
+              let emojiString = "";
 
-      for (let i = 0; i < emojiCount; i++) {
-        emojiString += "🟣🔥";
-      }
+              for (let i = 0; i < emojiCount; i++) {
+                emojiString += "🟣🔥";
+              }
 
-      const voidRank = getVoidRank(voidBalance);
-      const imageUrl = getRankImageUrl(voidRank);
+              const voidRank = getVoidRank(voidBalance);
+              const imageUrl = getRankImageUrl(voidRank);
 
-      const message = `${emojiString}
+              const message = `${emojiString}
 💸 Bought ${amountTransferred.toFixed(2)} VOID ($${transactionvalue}) (<a href="${addressLink}">View Address</a>)
 🟣 VOID Price: $${voidPrice.toFixed(5)}
 💰 Market Cap: $${marketCap.toFixed(0)}
@@ -353,26 +353,25 @@ async function detectUniswapLatestTransaction() {
 🛡️ VOID Rank: ${voidRank}
 🚰 Pool: ${POOL_MAPPING[poolAddress]}`;
 
+              const voidMessageOptions = {
+                caption: message,
+                parse_mode: "HTML",
+              };
 
-      const voidMessageOptions = {
-        caption: message,
-        parse_mode: "HTML",
-      };
+              sendPhotoMessage(imageUrl, voidMessageOptions);
+              processedUniswapTransactions.add(transaction.id);
+            } else if (isBuy && voidBalance < 1500 && Number(transaction.attributes.volume_in_usd) > 1000) {
+              // Handle arbitrage buy transaction
+              const emojiCount = Math.floor(Math.min(Math.ceil(transaction.attributes.volume_in_usd / 100), 96));
+              let emojiString = "";
 
-      sendPhotoMessage(imageUrl, voidMessageOptions);
-      processedUniswapTransactions.add(transaction.id);
-    } else if (isBuy && voidBalance < 1500 && Number(transaction.attributes.volume_in_usd) > 1000) {
-      // Handle arbitrage buy transaction
-      const emojiCount = Math.floor(Math.min(Math.ceil(transaction.attributes.volume_in_usd / 100), 96));
-      let emojiString = "";
+              for (let i = 0; i < emojiCount; i++) {
+                emojiString += "🤖🔩";
+              }
 
-      for (let i = 0; i < emojiCount; i++) {
-        emojiString += "🤖🔩";
-      }
+              const imageUrl = "https://voidonbase.com/arbitrage.jpg";
 
-      const imageUrl = "https://voidonbase.com/arbitrage.jpg";
-
-      const message = `${emojiString}
+              const message = `${emojiString}
 💸 Bought ${amountTransferred.toFixed(2)} VOID ($${transactionvalue}) (<a href="${addressLink}">View Address</a>)
 🟣 VOID Price: $${voidPrice.toFixed(5)}
 💰 Market Cap: $${marketCap.toFixed(0)}
@@ -382,53 +381,24 @@ async function detectUniswapLatestTransaction() {
 ⚠️ Arbitrage Transaction
 🚰 Pool: ${POOL_MAPPING[poolAddress]}`;
 
-  const voidMessageOptions = {
-    caption: message,
-    parse_mode: "HTML",
-  };
+              const voidMessageOptions = {
+                caption: message,
+                parse_mode: "HTML",
+              };
 
-      sendPhotoMessage(imageUrl, voidMessageOptions);
-      processedUniswapTransactions.add(transaction.id);
-    } else if (!isBuy && Number(transaction.attributes.volume_in_usd) > 10000) {
-      // Handle sell transaction
-      const emojiCount = Math.floor(Math.min(Math.ceil(transaction.attributes.volume_in_usd / 200), 96));
-      let emojiString = "";
-
-      for (let i = 0; i < emojiCount; i++) {
-        emojiString += "🔴🤡";
+              sendPhotoMessage(imageUrl, voidMessageOptions);
+              processedUniswapTransactions.add(transaction.id);
+            } else {
+              processedUniswapTransactions.add(transaction.id);
+              console.error("Transaction amount too low to process, tx hash:", transaction.attributes.tx_hash + " skipping...");
+            }
+          }
+        })
       }
-
-      const voidRank = getVoidRank(voidBalance);
-      const imageUrl = getRankImageUrl(voidRank);
-
-      const message = `${emojiString}
-💸 Sold ${amountTransferred.toFixed(2)} VOID ($${transactionvalue}) (<a href="${addressLink}">View Address</a>)
-🟣 VOID Price: $${voidPrice.toFixed(5)}
-💰 Market Cap: $${marketCap.toFixed(0)}
-🔥 Percent Burned: ${percentBurned.toFixed(3)}%
-<a href="${chartLink}">📈 Chart</a>
-<a href="${txHashLink}">💱 TX Hash</a>
-⚖️ Remaining VOID Balance: ${voidBalance.toFixed(2)}
-🛡️ VOID Rank: ${voidRank}
-🚰 Pool: ${POOL_MAPPING[poolAddress]}`;
-
-      const voidMessageOptions = {
-        caption: message,
-        parse_mode: "HTML",
-      };
-
-      sendPhotoMessage(imageUrl, voidMessageOptions);
-      processedUniswapTransactions.add(transaction.id);
-    } else {
-      processedUniswapTransactions.add(transaction.id);
-      console.error("Transaction amount too low to process, tx hash:", transaction.attributes.tx_hash + " skipping...");
+    } catch (error) {
+      console.error("Error in detectUniswapLatestTransaction:", error);
     }
-  }
-})
-}
-} catch (error) {
-console.error("Error in detectUniswapLatestTransaction:", error);
-}});
+  });
 }
 async function detectVoidBurnEvent() {
   try {
