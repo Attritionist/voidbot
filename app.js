@@ -520,7 +520,7 @@ async function detectVoidBurnEvent() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 14000);
+scheduleNextCall(detectVoidBurnEvent, 30000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
@@ -550,5 +550,5 @@ const fetchInitialUniswapTransactions = async () => {
 fetchInitialUniswapTransactions().catch((error) => {
   console.error("Error fetching initial Uniswap transactions:", error);
 }).then(() => {
-  scheduleNextCall(detectUniswapLatestTransaction, 50000);
+  scheduleNextCall(detectUniswapLatestTransaction, 45000);
 });
