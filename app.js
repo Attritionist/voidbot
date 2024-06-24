@@ -330,7 +330,7 @@ async function detectUniswapLatestTransaction() {
           if (balanceDetailResponse.data.status === "1") {
             const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
 
-            if (isBuy && voidBalance > 1500 && Number(transaction.attributes.volume_in_usd) > 100) {
+            if (isBuy && voidBalance > 1500 && Number(transaction.attributes.volume_in_usd) > 200) {
               // Handle normal buy transaction
               const emojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 100), 96);
               let emojiString = "";
@@ -520,5 +520,5 @@ const fetchInitialUniswapTransactions = async () => {
 fetchInitialUniswapTransactions().catch((error) => {
   console.error("Error fetching initial Uniswap transactions:", error);
 }).then(() => {
-  scheduleNextCall(detectUniswapLatestTransaction, 45000);
+  scheduleNextCall(detectUniswapLatestTransaction, 40000);
 });
