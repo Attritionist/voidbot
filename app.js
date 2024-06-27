@@ -330,7 +330,7 @@ async function detectUniswapLatestTransaction() {
           if (balanceDetailResponse.data.status === "1") {
             const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
 
-            if (isBuy && voidBalance > 1500 && Number(transaction.attributes.volume_in_usd) > 200) {
+            if (isBuy && voidBalance > 1500 && Number(transaction.attributes.volume_in_usd) > 150) {
               // Handle normal buy transaction
               const emojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 100), 96);
               let emojiString = "";
