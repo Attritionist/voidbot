@@ -18,24 +18,10 @@ let processedTransactions = new Set();
 let processedUniswapTransactions = new Set();
 
 const POOL_MAPPING = {
-  "0xb14e941d34d61ae251ccc08ac15b8455ae9f60a5": "VOID/ETH",
-  "0x6d8b0d8825f8c8a885a2809fbf03983a9430f999": "VOID/CIRCLE",
-  "0xa2b01d461b811096eab039f0283655326440e78f": "VOID/DOGINME",
-  "0x263ea0a3cf3845fc52a30c6e81dbd985b7290fbf": "VOID/NORMIE",
-  "0x15539e7fe9842a53c6fd578345e15ccca80aa253": "VOID/OKAYEG",
-  "0x0abf279c2313a1ceb175ad0094a117f27a350aad": "VOID/PONCHO",
-  "0xe5fe953ca480d0a7b22ed664a7370a36038c13ae": "VOID/TOSHI",
-  "0xf2de7d73e8e56822afdf19fd08d999c78abd933b": "TYBG/VOID",
-  "0x66fa42cfd1789aa7f87c1ef988bf04cb145c9465": "VOID/AERO",
-  "0x1f43031a6294b9c2219887c9e9f5b3671433df3c": "VOID/DEGEN",
-  "0x7377ff4f6ac21c1be5d943482b3c439d080f65c1": "VOID/FUNGI",
-  "0x39f0c947fcea3ca8aa6b9eaa9045a95709b6f59a": "VOID/WEIRDO",
-  "0xA6d470b00963c0c082E93c3E985D287e677A9477": "VOID/KEYCAT",
-  "0xEd8a52E5B3A244Cad7cd03dd1Cc2a0cfC1281148": "VOID/BENJI",
+  "0xb14e941d34d61ae251ccc08ac15b8455ae9f60a5": "VOID/ETH"
 };
 
 const REVERSED_POOLS = [
-    "0xf2de7d73e8e56822afdf19fd08d999c78abd933b",
 ];
 
 if (fs.existsSync(processedTransactionsFilePath)) {
@@ -82,7 +68,7 @@ setInterval(async () => {
     currentVoidUsdPrice = priceInfo.voidPrice;
     console.log(`Updated current VOID USD price to: ${currentVoidUsdPrice}`);
   }
-}, 60000);
+}, 45000);
 
 let currentVoidUsdPrice = null;
 
@@ -333,7 +319,7 @@ async function detectUniswapLatestTransaction() {
           if (balanceDetailResponse.data.status === "1") {
             const voidBalance = balanceDetailResponse.data.result / 10 ** tokenDecimals;
 
-            if (isBuy && voidBalance > 1500 && Number(transaction.attributes.volume_in_usd) > 150) {
+            if (isBuy && voidBalance > 1501 && Number(transaction.attributes.volume_in_usd) > 100) {
               // Handle normal buy transaction
               const emojiCount = Math.min(Math.ceil(transaction.attributes.volume_in_usd / 100), 96);
               let emojiString = "";
@@ -363,7 +349,7 @@ async function detectUniswapLatestTransaction() {
 
               sendPhotoMessage(imageUrl, voidMessageOptions);
               processedUniswapTransactions.add(transaction.id);
-            } else if (isBuy && voidBalance < 1500 && Number(transaction.attributes.volume_in_usd) > 1000) {
+            } else if (isBuy && voidBalance < 1501 && Number(transaction.attributes.volume_in_usd) > 1000) {
               // Handle arbitrage buy transaction
               const emojiCount = Math.floor(Math.min(Math.ceil(transaction.attributes.volume_in_usd / 100), 96));
               let emojiString = "";
@@ -493,7 +479,7 @@ async function detectVoidBurnEvent() {
     console.error("Error updating total burned amount:", error);
   }
 }
-scheduleNextCall(detectVoidBurnEvent, 30000);
+scheduleNextCall(detectVoidBurnEvent, 20000);
 
 
 // Add initial 300 transactions to processed transactions set to avoid spamming the group on initial startup
@@ -523,5 +509,5 @@ const fetchInitialUniswapTransactions = async () => {
 fetchInitialUniswapTransactions().catch((error) => {
   console.error("Error fetching initial Uniswap transactions:", error);
 }).then(() => {
-  scheduleNextCall(detectUniswapLatestTransaction, 40000);
+  scheduleNextCall(detectUniswapLatestTransaction, 7500);
 });
