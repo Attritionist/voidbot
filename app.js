@@ -542,11 +542,16 @@ async function claimLoop() {
     console.log("Checking time left for next VOID claim...");
 
     // Call timeLeftCheck first
-    await contract.timeLeftCheck();
+    const tx = await contract.timeLeftCheck();
+    console.log(`timeLeftCheck transaction sent: ${tx.hash}`);
 
-    // Then get the updated timeLeft
+    // Wait for the transaction to be mined
+    await tx.wait();
+    console.log("timeLeftCheck transaction confirmed");
+
+    // Fetch the updated timeLeft
     let timeLeft = await contract.timeLeft();
-    
+
     // Add 10 seconds buffer
     timeLeft = timeLeft.add(10);
 
@@ -556,13 +561,14 @@ async function claimLoop() {
       console.log("Claim time reached. Attempting to claim VOID...");
 
       // Attempt to claim
-      const tx = await contract.claimVoid();
-      console.log(`Claim transaction sent: ${tx.hash}`);
-      await tx.wait();
+      const claimTx = await contract.claimVoid();
+      console.log(`Claim transaction sent: ${claimTx.hash}`);
+      await claimTx.wait();
       console.log("Claim transaction confirmed");
 
       // Check the new time left
-      await contract.timeLeftCheck();
+      const newTx = await contract.timeLeftCheck();
+      await newTx.wait(); // Wait for the transaction to be mined
       timeLeft = await contract.timeLeft();
       timeLeft = timeLeft.add(10); // Add 10 seconds buffer
       console.log(`New time left until next claim: ${timeLeft.toString()} seconds (includes 10 seconds buffer)`);
@@ -580,6 +586,7 @@ async function claimLoop() {
     setTimeout(claimLoop, 30000);
   }
 }
+
 
 // Initialize and start the various processes
 scheduleNextCall(detectVoidBurnEvent, 20000);
