@@ -3,6 +3,7 @@ const TelegramBot = require("node-telegram-bot-api");
 const Web3 = require('web3');
 const { ethers } = require('ethers');
 require("dotenv").config();
+const { BigNumber } = require('ethers');
 
 const TELEGRAM_CHAT_ID = process.env["TELEGRAM_CHAT_ID"];
 const TELEGRAM_BOT_TOKEN = process.env["TELEGRAM_BOT_TOKEN"];
@@ -539,40 +540,44 @@ async function initializeAndStartClaimProcess() {
 }
 async function claimLoop() {
   try {
-    console.log("Checking time left for next VOID claim...");
+    console.log(`[${new Date().toISOString()}] Checking time left for next VOID claim...`);
 
     let timeLeft;
     try {
       // Try to call timeLeftCheck first
       const tx = await contract.timeLeftCheck();
-      console.log(`timeLeftCheck transaction sent: ${tx.hash}`);
+      console.log(`[${new Date().toISOString()}] timeLeftCheck transaction sent: ${tx.hash}`);
       await tx.wait();
-      console.log("timeLeftCheck transaction confirmed");
+      console.log(`[${new Date().toISOString()}] timeLeftCheck transaction confirmed`);
       
       // Fetch the updated timeLeft
       timeLeft = await contract.timeLeft();
     } catch (error) {
-      console.warn("Error calling timeLeftCheck, falling back to timeLeft:", error.message);
+      console.warn(`[${new Date().toISOString()}] Error calling timeLeftCheck, falling back to timeLeft:`, error.message);
       // If timeLeftCheck fails, use timeLeft directly
       timeLeft = await contract.timeLeft();
     }
 
+    // Ensure timeLeft is a BigNumber
+    timeLeft = BigNumber.from(timeLeft);
+
     // Add 10 seconds buffer
-    timeLeft = timeLeft.add(10);
+    const bufferTime = BigNumber.from(10);
+    timeLeft = timeLeft.add(bufferTime);
 
-    console.log(`Time left until next claim: ${timeLeft.toString()} seconds (includes 10 seconds buffer)`);
+    console.log(`[${new Date().toISOString()}] Time left until next claim: ${timeLeft.toString()} seconds (includes ${bufferTime.toString()} seconds buffer)`);
 
-    if (timeLeft.eq(0)) {
-      console.log("Claim time reached. Attempting to claim VOID...");
+    if (timeLeft.lte(BigNumber.from(0))) {
+      console.log(`[${new Date().toISOString()}] Claim time reached. Attempting to claim VOID...`);
 
       try {
         // Attempt to claim
         const claimTx = await contract.claimVoid();
-        console.log(`Claim transaction sent: ${claimTx.hash}`);
+        console.log(`[${new Date().toISOString()}] Claim transaction sent: ${claimTx.hash}`);
         await claimTx.wait();
-        console.log("Claim transaction confirmed");
+        console.log(`[${new Date().toISOString()}] Claim transaction confirmed`);
       } catch (claimError) {
-        console.error("Error claiming VOID:", claimError.message);
+        console.error(`[${new Date().toISOString()}] Error claiming VOID:`, claimError.message);
       }
 
       // Check the new time left
@@ -581,27 +586,34 @@ async function claimLoop() {
         await newTx.wait();
         timeLeft = await contract.timeLeft();
       } catch (error) {
-        console.warn("Error checking new time left after claim, using direct timeLeft:", error.message);
+        console.warn(`[${new Date().toISOString()}] Error checking new time left after claim, using direct timeLeft:`, error.message);
         timeLeft = await contract.timeLeft();
       }
-      timeLeft = timeLeft.add(10); // Add 10 seconds buffer
-      console.log(`New time left until next claim: ${timeLeft.toString()} seconds (includes 10 seconds buffer)`);
+      timeLeft = BigNumber.from(timeLeft).add(bufferTime);
+      console.log(`[${new Date().toISOString()}] New time left until next claim: ${timeLeft.toString()} seconds (includes ${bufferTime.toString()} seconds buffer)`);
     }
 
-    // Wait until it's time to check again
-    const waitTime = Math.max(timeLeft.toNumber(), 30); // Ensure we wait at least 30 seconds
-    console.log(`Waiting ${waitTime} seconds before next check...`);
-    await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
+    // Calculate wait time, ensuring it's at least 30 seconds and at most 24 hours
+    const minWaitTime = BigNumber.from(30);
+    const maxWaitTime = BigNumber.from(86400); // 24 hours in seconds
+    const waitTime = BigNumber.from(timeLeft).gt(maxWaitTime) ? maxWaitTime : BigNumber.from(timeLeft).lt(minWaitTime) ? minWaitTime : timeLeft;
+
+    console.log(`[${new Date().toISOString()}] Waiting ${waitTime.toString()} seconds before next check...`);
+    const nextCheckTime = new Date(Date.now() + waitTime.toNumber() * 1000);
+    console.log(`[${new Date().toISOString()}] Next check scheduled for: ${nextCheckTime.toISOString()}`);
+
+    await new Promise(resolve => setTimeout(resolve, waitTime.toNumber() * 1000));
 
     // Continue the loop
     claimLoop();
   } catch (error) {
-    console.error("Error in claim loop:", error);
+    console.error(`[${new Date().toISOString()}] Error in claim loop:`, error);
     // If there's an error, wait for a minute and then retry
-    setTimeout(claimLoop, 60000);
+    const retryTime = 60000; // 1 minute
+    console.log(`[${new Date().toISOString()}] Retrying in ${retryTime / 1000} seconds...`);
+    setTimeout(claimLoop, retryTime);
   }
 }
-
 
 // Initialize and start the various processes
 scheduleNextCall(detectVoidBurnEvent, 20000);
