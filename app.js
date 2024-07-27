@@ -11,6 +11,7 @@ const COINGECKO_API = process.env["COINGECKO_API"];
 const PRIVATE_KEY = process.env["PRIVATE_KEY"];
 const RPC_URL = 'https://mainnet.base.org';
 const CONTRACT_ADDRESS = '0x21eCEAf3Bf88EF0797E3927d855CA5bb569a47fc';
+const ENTROPY_ADDRESS = '0x3ea7299b87deA5D7617a0D28C3879b4277CBDa67';
 
 const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
 const tokenDecimals = 18;
@@ -67,7 +68,7 @@ const VOID_ABI = [
 
 const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
-const contract = new ethers.Contract(CONTRACT_ADDRESS, VOID_ABI, wallet);
+const contract = new ethers.Contract(ENTROPY_ADDRESS, VOID_ABI, wallet);
 
 
 if (fs.existsSync(processedTransactionsFilePath)) {
