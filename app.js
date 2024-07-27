@@ -563,7 +563,12 @@ async function claimLoop() {
       
       // If timeLeftCheck succeeds, it means we're not ready to claim yet
       timeLeft = await contract.timeLeft();
-      console.log(`[${new Date().toISOString()}] Time left until next claim: ${timeLeft.toString()} seconds`);
+      console.log(`[${new Date().toISOString()}] Raw time left until next claim: ${timeLeft.toString()} seconds`);
+      
+      // Add 10 seconds buffer
+      const buffer = BigNumber.from(10);
+      timeLeft = timeLeft.add(buffer);
+      console.log(`[${new Date().toISOString()}] Time left with buffer: ${timeLeft.toString()} seconds (including ${buffer.toString()} seconds buffer)`);
     } catch (error) {
       console.log(`[${new Date().toISOString()}] timeLeftCheck reverted. This likely means it's time to claim.`);
       canClaim = true;
@@ -581,21 +586,26 @@ async function claimLoop() {
         
         // After successful claim, check the new time left
         timeLeft = await contract.timeLeft();
-        console.log(`[${new Date().toISOString()}] New time left until next claim: ${timeLeft.toString()} seconds`);
+        console.log(`[${new Date().toISOString()}] Raw new time left until next claim: ${timeLeft.toString()} seconds`);
+        
+        // Add 10 seconds buffer
+        const buffer = BigNumber.from(10);
+        timeLeft = timeLeft.add(buffer);
+        console.log(`[${new Date().toISOString()}] New time left with buffer: ${timeLeft.toString()} seconds (including ${buffer.toString()} seconds buffer)`);
       } catch (claimError) {
         console.error(`[${new Date().toISOString()}] Error claiming VOID:`, claimError);
         console.log(`[${new Date().toISOString()}] Error details:`, JSON.stringify(claimError, null, 2));
         // If claim fails, we'll check again soon
-        timeLeft = BigNumber.from(60); // Check again in 1 minute
+        timeLeft = BigNumber.from(300); // Check again in 5 minutes
       }
     }
 
     // Ensure timeLeft is a BigNumber
     timeLeft = BigNumber.from(timeLeft);
 
-    // Calculate wait time, ensuring it's at least 30 seconds and at most 24 hours
-    const minWaitTime = BigNumber.from(30);
-    const maxWaitTime = BigNumber.from(86400); // 24 hours in seconds
+    // Calculate wait time, ensuring it's at least 30 seconds and at most 38 hours
+    const minWaitTime = BigNumber.from(30); // 30 seconds
+    const maxWaitTime = BigNumber.from(173000); // 48 hours in seconds
     const waitTime = timeLeft.gt(maxWaitTime) ? maxWaitTime : timeLeft.lt(minWaitTime) ? minWaitTime : timeLeft;
 
     console.log(`[${new Date().toISOString()}] Waiting ${waitTime.toString()} seconds before next check...`);
