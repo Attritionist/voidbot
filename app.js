@@ -503,7 +503,8 @@ async function initializeAndStartClaimProcess() {
     // Initial timeLeftCheck to get the current state
     await contract.timeLeftCheck();
     let timeLeft = await contract.timeLeft();
-    console.log(`Initial time left until next claim: ${timeLeft.toString()} seconds`);
+    timeLeft = timeLeft.add(10); // Add 10 seconds buffer
+    console.log(`Initial time left until next claim: ${timeLeft.toString()} seconds (includes 10 seconds buffer)`);
 
     // Start the claiming loop
     await claimLoop(timeLeft);
@@ -515,15 +516,12 @@ async function initializeAndStartClaimProcess() {
 }
 async function claimLoop(timeLeft) {
   try {
-    const bufferTime = 10; // 10 seconds buffer
-    const totalWaitTime = timeLeft.toNumber() + bufferTime;
+    // Calculate the exact time for the next claim
+    const claimTime = Date.now() + timeLeft.toNumber() * 1000;
+    console.log(`Next claim scheduled for: ${new Date(claimTime)}`);
 
-    // Calculate the exact time for the next claim, including buffer
-    const claimTime = Date.now() + totalWaitTime * 1000;
-    console.log(`Next claim scheduled for: ${new Date(claimTime)} (includes ${bufferTime} seconds buffer)`);
-
-    // Wait until it's time to claim (including buffer)
-    await new Promise(resolve => setTimeout(resolve, totalWaitTime * 1000));
+    // Wait until it's time to claim
+    await new Promise(resolve => setTimeout(resolve, timeLeft.toNumber() * 1000));
 
     console.log("Claim time reached. Attempting to claim VOID...");
 
@@ -536,7 +534,8 @@ async function claimLoop(timeLeft) {
     // Check the new time left
     await contract.timeLeftCheck();
     timeLeft = await contract.timeLeft();
-    console.log(`New time left until next claim: ${timeLeft.toString()} seconds`);
+    timeLeft = timeLeft.add(10); // Add 10 seconds buffer
+    console.log(`New time left until next claim: ${timeLeft.toString()} seconds (includes 10 seconds buffer)`);
 
     // Continue the loop with the new timeLeft
     claimLoop(timeLeft);
