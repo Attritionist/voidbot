@@ -541,16 +541,21 @@ async function claimLoop() {
   try {
     console.log("Checking time left for next VOID claim...");
 
-    // Call timeLeftCheck first
-    const tx = await contract.timeLeftCheck();
-    console.log(`timeLeftCheck transaction sent: ${tx.hash}`);
-
-    // Wait for the transaction to be mined
-    await tx.wait();
-    console.log("timeLeftCheck transaction confirmed");
-
-    // Fetch the updated timeLeft
-    let timeLeft = await contract.timeLeft();
+    let timeLeft;
+    try {
+      // Try to call timeLeftCheck first
+      const tx = await contract.timeLeftCheck();
+      console.log(`timeLeftCheck transaction sent: ${tx.hash}`);
+      await tx.wait();
+      console.log("timeLeftCheck transaction confirmed");
+      
+      // Fetch the updated timeLeft
+      timeLeft = await contract.timeLeft();
+    } catch (error) {
+      console.warn("Error calling timeLeftCheck, falling back to timeLeft:", error.message);
+      // If timeLeftCheck fails, use timeLeft directly
+      timeLeft = await contract.timeLeft();
+    }
 
     // Add 10 seconds buffer
     timeLeft = timeLeft.add(10);
@@ -560,30 +565,40 @@ async function claimLoop() {
     if (timeLeft.eq(0)) {
       console.log("Claim time reached. Attempting to claim VOID...");
 
-      // Attempt to claim
-      const claimTx = await contract.claimVoid();
-      console.log(`Claim transaction sent: ${claimTx.hash}`);
-      await claimTx.wait();
-      console.log("Claim transaction confirmed");
+      try {
+        // Attempt to claim
+        const claimTx = await contract.claimVoid();
+        console.log(`Claim transaction sent: ${claimTx.hash}`);
+        await claimTx.wait();
+        console.log("Claim transaction confirmed");
+      } catch (claimError) {
+        console.error("Error claiming VOID:", claimError.message);
+      }
 
       // Check the new time left
-      const newTx = await contract.timeLeftCheck();
-      await newTx.wait(); // Wait for the transaction to be mined
-      timeLeft = await contract.timeLeft();
+      try {
+        const newTx = await contract.timeLeftCheck();
+        await newTx.wait();
+        timeLeft = await contract.timeLeft();
+      } catch (error) {
+        console.warn("Error checking new time left after claim, using direct timeLeft:", error.message);
+        timeLeft = await contract.timeLeft();
+      }
       timeLeft = timeLeft.add(10); // Add 10 seconds buffer
       console.log(`New time left until next claim: ${timeLeft.toString()} seconds (includes 10 seconds buffer)`);
     }
 
     // Wait until it's time to check again
-    console.log(`Waiting ${timeLeft.toString()} seconds before next check...`);
-    await new Promise(resolve => setTimeout(resolve, timeLeft.toNumber() * 1000));
+    const waitTime = Math.max(timeLeft.toNumber(), 30); // Ensure we wait at least 30 seconds
+    console.log(`Waiting ${waitTime} seconds before next check...`);
+    await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
 
     // Continue the loop
     claimLoop();
   } catch (error) {
     console.error("Error in claim loop:", error);
     // If there's an error, wait for a minute and then retry
-    setTimeout(claimLoop, 30000);
+    setTimeout(claimLoop, 60000);
   }
 }
 
