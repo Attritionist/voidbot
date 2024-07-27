@@ -128,8 +128,9 @@ function addToMessageQueue(message) {
   messageQueue.push(message);
 }
 
-function addToBurnQueue(message) {
-  messageQueue.push(message);
+function addToBurnQueue(photo, options) {
+  messageQueue.push({ photo, options });
+  sendBurnFromQueue(); // This will start processing the queue if it's not already running
 }
 
 async function sendBurnFromQueue() {
@@ -137,17 +138,27 @@ async function sendBurnFromQueue() {
     isSendingMessage = true;
     const message = messageQueue.shift();
     try {
-      await bot.sendPhoto(
+      // Ensure disable_notification is set in the options
+      message.options.disable_notification = true;
+
+      const sentMessage = await bot.sendPhoto(
         TELEGRAM_CHAT_ID,
         message.photo,
         message.options
       );
+      
+      // Pin the message without notification
+      await bot.pinChatMessage(TELEGRAM_CHAT_ID, sentMessage.message_id, {
+        disable_notification: true
+      });
+
+      console.log(`[${new Date().toISOString()}] Burn message sent and pinned successfully.`);
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error(`[${new Date().toISOString()}] Error sending or pinning message:`, error);
     }
     setTimeout(() => {
       isSendingMessage = false;
-      sendAnimationMessage();
+      sendBurnFromQueue();
     }, 500);
   }
 }
@@ -477,19 +488,16 @@ async function detectVoidBurnEvent() {
       const percentBurned =
         ((initialSupply - totalBurnedAmountt) / initialSupply) * 100;
       totalBurnedAmountt += amountBurned;
-      const burnMessage = `VOID Burned!\n\n💀💀💀💀💀\n🔥 Burned: ${amountBurned.toFixed(
-        3
-      )} VOID\nPercent Burned: ${percentBurned.toFixed(
-        2
-      )}%\n🔎 <a href="${chartLink}">Chart</a> | <a href="${txHashLink}">TX Hash</a>`;
+      const burnMessage = `VOID Burned!\n\n💀💀💀💀💀\n🔥 Burned: ${amountBurned.toFixed(3)} VOID\nPercent Burned: ${percentBurned.toFixed(2)}%\n🔎 <a href="${chartLink}">Chart</a> | <a href="${txHashLink}">TX Hash</a>`;
 
-      const burnanimationMessageOptions = {
-        caption: burnMessage,
-        parse_mode: "HTML",
-      };
-      sendAnimationMessage(burnAnimation, burnanimationMessageOptions);
+    const burnMessageOptions = {
+      caption: burnMessage,
+      parse_mode: "HTML"
+    };
 
-      saveProcessedTransactions();
+    addToBurnQueue(burnAnimation, burnMessageOptions);
+
+    saveProcessedTransactions();
     });
   } catch (error) {
     console.error("Error detecting token burn event:", error);
