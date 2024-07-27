@@ -30,9 +30,39 @@ const POOL_MAPPING = {
 const REVERSED_POOLS = [];
 
 const VOID_ABI = [
-  {"inputs":[],"name":"claimVoid","outputs":[],"stateMutability":"nonpayable","type":"function"},
-  {"inputs":[],"name":"timeLeftCheck","outputs":[],"stateMutability":"nonpayable","type":"function"},
-  {"inputs":[],"name":"timeLeft","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+    {
+        "inputs": [],
+        "name": "claimVoid",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "timeLeftCheck",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "timeLeft",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
 ];
 
 const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
@@ -499,50 +529,54 @@ async function updateTotalBurnedAmount() {
 async function initializeAndStartClaimProcess() {
   try {
     console.log("Initializing VOID claim process...");
-
-    // Initial timeLeftCheck to get the current state
-    await contract.timeLeftCheck();
-    let timeLeft = await contract.timeLeft();
-    timeLeft = timeLeft.add(10); // Add 10 seconds buffer
-    console.log(`Initial time left until next claim: ${timeLeft.toString()} seconds (includes 10 seconds buffer)`);
-
-    // Start the claiming loop
-    await claimLoop(timeLeft);
+    await claimLoop();
   } catch (error) {
     console.error("Error in initialization:", error);
     // Retry initialization after a delay
     setTimeout(initializeAndStartClaimProcess, 60000);
   }
 }
-async function claimLoop(timeLeft) {
+async function claimLoop() {
   try {
-    // Calculate the exact time for the next claim
-    const claimTime = Date.now() + timeLeft.toNumber() * 1000;
-    console.log(`Next claim scheduled for: ${new Date(claimTime)}`);
+    console.log("Checking time left for next VOID claim...");
 
-    // Wait until it's time to claim
+    // Call timeLeftCheck first
+    await contract.timeLeftCheck();
+
+    // Then get the updated timeLeft
+    let timeLeft = await contract.timeLeft();
+    
+    // Add 10 seconds buffer
+    timeLeft = timeLeft.add(10);
+
+    console.log(`Time left until next claim: ${timeLeft.toString()} seconds (includes 10 seconds buffer)`);
+
+    if (timeLeft.eq(0)) {
+      console.log("Claim time reached. Attempting to claim VOID...");
+
+      // Attempt to claim
+      const tx = await contract.claimVoid();
+      console.log(`Claim transaction sent: ${tx.hash}`);
+      await tx.wait();
+      console.log("Claim transaction confirmed");
+
+      // Check the new time left
+      await contract.timeLeftCheck();
+      timeLeft = await contract.timeLeft();
+      timeLeft = timeLeft.add(10); // Add 10 seconds buffer
+      console.log(`New time left until next claim: ${timeLeft.toString()} seconds (includes 10 seconds buffer)`);
+    }
+
+    // Wait until it's time to check again
+    console.log(`Waiting ${timeLeft.toString()} seconds before next check...`);
     await new Promise(resolve => setTimeout(resolve, timeLeft.toNumber() * 1000));
 
-    console.log("Claim time reached. Attempting to claim VOID...");
-
-    // Attempt to claim
-    const tx = await contract.claimVoid();
-    console.log(`Claim transaction sent: ${tx.hash}`);
-    await tx.wait();
-    console.log("Claim transaction confirmed");
-
-    // Check the new time left
-    await contract.timeLeftCheck();
-    timeLeft = await contract.timeLeft();
-    timeLeft = timeLeft.add(10); // Add 10 seconds buffer
-    console.log(`New time left until next claim: ${timeLeft.toString()} seconds (includes 10 seconds buffer)`);
-
-    // Continue the loop with the new timeLeft
-    claimLoop(timeLeft);
+    // Continue the loop
+    claimLoop();
   } catch (error) {
     console.error("Error in claim loop:", error);
-    // If there's an error, wait for a minute and then reinitialize the process
-    setTimeout(initializeAndStartClaimProcess, 60000);
+    // If there's an error, wait for a minute and then retry
+    setTimeout(claimLoop, 30000);
   }
 }
 
