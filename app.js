@@ -39,6 +39,7 @@ const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 const contract = new ethers.Contract(CONTRACT_ADDRESS, VOID_ABI, wallet);
 
+
 if (fs.existsSync(processedTransactionsFilePath)) {
   const data = fs.readFileSync(processedTransactionsFilePath, "utf-8");
   if (data.trim()) {
@@ -494,46 +495,56 @@ async function updateTotalBurnedAmount() {
   } catch (error) {
     console.error("Error updating total burned amount:", error);
   }
-}
 
-async function checkAndClaimVoid() {
+async function initializeAndStartClaimProcess() {
   try {
-    const timeLeft = await contract.timeLeft();
-    console.log(`Time left until next claim: ${timeLeft.toString()} seconds`);
+    console.log("Initializing VOID claim process...");
 
-    if (timeLeft.eq(0)) {
-      console.log("Attempting to claim VOID...");
-      
-      const tx = await contract.claimVoid();
-      console.log(`Transaction sent: ${tx.hash}`);
-      
-      await tx.wait();
-      console.log("Transaction confirmed");
+    // Initial timeLeftCheck to get the current state
+    await contract.timeLeftCheck();
+    let timeLeft = await contract.timeLeft();
+    console.log(`Initial time left until next claim: ${timeLeft.toString()} seconds`);
 
-      await new Promise(resolve => setTimeout(resolve, 10000));
-
-      const timeLeftCheckTx = await contract.timeLeftCheck();
-      await timeLeftCheckTx.wait();
-      console.log("timeLeftCheck called and confirmed");
-
-      const newTimeLeft = await contract.timeLeft();
-      console.log(`New time left until next claim: ${newTimeLeft.toString()} seconds`);
-
-      const nextClaimTime = Date.now() + 10 + newTimeLeft.toNumber() * 1000;
-      console.log(`Next claim available at: ${new Date(nextClaimTime)}`);
-    } else {
-      console.log("Not yet time to claim VOID");
-    }
+    // Start the claiming loop
+    await claimLoop(timeLeft);
   } catch (error) {
-    console.error("Error in checkAndClaimVoid:", error);
+    console.error("Error in initialization:", error);
+    // Retry initialization after a delay
+    setTimeout(initializeAndStartClaimProcess, 60000);
   }
 }
+async function claimLoop(timeLeft) {
+  try {
+    const bufferTime = 10; // 10 seconds buffer
+    const totalWaitTime = timeLeft.toNumber() + bufferTime;
 
-function scheduleNextCheck() {
-  const checkInterval = 1 * 60 * 1000; // Check every 1 minutes
-  setTimeout(() => {
-    checkAndClaimVoid().then(scheduleNextCheck);
-  }, checkInterval);
+    // Calculate the exact time for the next claim, including buffer
+    const claimTime = Date.now() + totalWaitTime * 1000;
+    console.log(`Next claim scheduled for: ${new Date(claimTime)} (includes ${bufferTime} seconds buffer)`);
+
+    // Wait until it's time to claim (including buffer)
+    await new Promise(resolve => setTimeout(resolve, totalWaitTime * 1000));
+
+    console.log("Claim time reached. Attempting to claim VOID...");
+
+    // Attempt to claim
+    const tx = await contract.claimVoid();
+    console.log(`Claim transaction sent: ${tx.hash}`);
+    await tx.wait();
+    console.log("Claim transaction confirmed");
+
+    // Check the new time left
+    await contract.timeLeftCheck();
+    timeLeft = await contract.timeLeft();
+    console.log(`New time left until next claim: ${timeLeft.toString()} seconds`);
+
+    // Continue the loop with the new timeLeft
+    claimLoop(timeLeft);
+  } catch (error) {
+    console.error("Error in claim loop:", error);
+    // If there's an error, wait for a minute and then reinitialize the process
+    setTimeout(initializeAndStartClaimProcess, 60000);
+  }
 }
 
 // Initialize and start the various processes
@@ -568,6 +579,6 @@ fetchInitialUniswapTransactions().catch((error) => {
 });
 
 // Start the VOID claiming process
-scheduleNextCheck();
+initializeAndStartClaimProcess();
 
 console.log("VOID Bot started successfully!");
