@@ -495,7 +495,7 @@ async function updateTotalBurnedAmount() {
   } catch (error) {
     console.error("Error updating total burned amount:", error);
   }
-
+}
 async function initializeAndStartClaimProcess() {
   try {
     console.log("Initializing VOID claim process...");
