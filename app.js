@@ -543,7 +543,7 @@ async function initializeAndStartClaimProcess() {
   } catch (error) {
     console.error("Error in initialization:", error);
     // Retry initialization after a delay
-    setTimeout(initializeAndStartClaimProcess, 60000);
+    setTimeout(initializeAndStartClaimProcess, 30000);
   }
 }
 async function claimLoop() {
@@ -554,9 +554,9 @@ async function claimLoop() {
     let timeLeft;
 
     try {
-      // Try to call timeLeftCheck
+      // Try to call timeLeftCheck with automatic gas estimation
       console.log(`[${new Date().toISOString()}] Attempting to call timeLeftCheck...`);
-      const tx = await contract.timeLeftCheck({ gasLimit: 500000 });
+      const tx = await contract.timeLeftCheck();
       console.log(`[${new Date().toISOString()}] timeLeftCheck transaction sent: ${tx.hash}`);
       const receipt = await tx.wait();
       console.log(`[${new Date().toISOString()}] timeLeftCheck transaction confirmed. Gas used: ${receipt.gasUsed.toString()}`);
@@ -571,6 +571,7 @@ async function claimLoop() {
       console.log(`[${new Date().toISOString()}] Time left with buffer: ${timeLeft.toString()} seconds (including ${buffer.toString()} seconds buffer)`);
     } catch (error) {
       console.log(`[${new Date().toISOString()}] timeLeftCheck reverted. This likely means it's time to claim.`);
+      console.log(`[${new Date().toISOString()}] Error details:`, error.message);
       canClaim = true;
     }
 
@@ -578,8 +579,8 @@ async function claimLoop() {
       console.log(`[${new Date().toISOString()}] Claim time reached. Attempting to claim VOID...`);
 
       try {
-        // Attempt to claim
-        const claimTx = await contract.claimVoid({ gasLimit: 500000 });
+        // Attempt to claim with automatic gas estimation
+        const claimTx = await contract.claimVoid();
         console.log(`[${new Date().toISOString()}] Claim transaction sent: ${claimTx.hash}`);
         const claimReceipt = await claimTx.wait();
         console.log(`[${new Date().toISOString()}] Claim transaction confirmed. Gas used: ${claimReceipt.gasUsed.toString()}`);
@@ -593,8 +594,7 @@ async function claimLoop() {
         timeLeft = timeLeft.add(buffer);
         console.log(`[${new Date().toISOString()}] New time left with buffer: ${timeLeft.toString()} seconds (including ${buffer.toString()} seconds buffer)`);
       } catch (claimError) {
-        console.error(`[${new Date().toISOString()}] Error claiming VOID:`, claimError);
-        console.log(`[${new Date().toISOString()}] Error details:`, JSON.stringify(claimError, null, 2));
+        console.error(`[${new Date().toISOString()}] Error claiming VOID:`, claimError.message);
         // If claim fails, we'll check again soon
         timeLeft = BigNumber.from(300); // Check again in 5 minutes
       }
@@ -603,9 +603,9 @@ async function claimLoop() {
     // Ensure timeLeft is a BigNumber
     timeLeft = BigNumber.from(timeLeft);
 
-    // Calculate wait time, ensuring it's at least 30 seconds and at most 38 hours
+    // Calculate wait time, ensuring it's at least 30 seconds and at most 48 hours
     const minWaitTime = BigNumber.from(30); // 30 seconds
-    const maxWaitTime = BigNumber.from(173000); // 48 hours in seconds
+    const maxWaitTime = BigNumber.from(173000); // ~48 hours in seconds
     const waitTime = timeLeft.gt(maxWaitTime) ? maxWaitTime : timeLeft.lt(minWaitTime) ? minWaitTime : timeLeft;
 
     console.log(`[${new Date().toISOString()}] Waiting ${waitTime.toString()} seconds before next check...`);
@@ -617,8 +617,7 @@ async function claimLoop() {
     // Continue the loop
     claimLoop();
   } catch (error) {
-    console.error(`[${new Date().toISOString()}] Error in claim loop:`, error);
-    console.log(`[${new Date().toISOString()}] Error details:`, JSON.stringify(error, null, 2));
+    console.error(`[${new Date().toISOString()}] Error in claim loop:`, error.message);
     // If there's an error, wait for a minute and then retry
     const retryTime = 60000; // 1 minute
     console.log(`[${new Date().toISOString()}] Retrying in ${retryTime / 1000} seconds...`);
