@@ -540,63 +540,55 @@ async function initializeAndStartClaimProcess() {
 }
 async function claimLoop() {
   try {
-    console.log(`[${new Date().toISOString()}] Checking time left for next VOID claim...`);
+    console.log(`[${new Date().toISOString()}] Checking if it's time to claim VOID...`);
 
+    let canClaim = false;
     let timeLeft;
+
     try {
-      // Try to call timeLeftCheck first
-      const tx = await contract.timeLeftCheck();
+      // Try to call timeLeftCheck
+      console.log(`[${new Date().toISOString()}] Attempting to call timeLeftCheck...`);
+      const tx = await contract.timeLeftCheck({ gasLimit: 500000 });
       console.log(`[${new Date().toISOString()}] timeLeftCheck transaction sent: ${tx.hash}`);
-      await tx.wait();
-      console.log(`[${new Date().toISOString()}] timeLeftCheck transaction confirmed`);
+      const receipt = await tx.wait();
+      console.log(`[${new Date().toISOString()}] timeLeftCheck transaction confirmed. Gas used: ${receipt.gasUsed.toString()}`);
       
-      // Fetch the updated timeLeft
+      // If timeLeftCheck succeeds, it means we're not ready to claim yet
       timeLeft = await contract.timeLeft();
+      console.log(`[${new Date().toISOString()}] Time left until next claim: ${timeLeft.toString()} seconds`);
     } catch (error) {
-      console.warn(`[${new Date().toISOString()}] Error calling timeLeftCheck, falling back to timeLeft:`, error.message);
-      // If timeLeftCheck fails, use timeLeft directly
-      timeLeft = await contract.timeLeft();
+      console.log(`[${new Date().toISOString()}] timeLeftCheck reverted. This likely means it's time to claim.`);
+      canClaim = true;
+    }
+
+    if (canClaim) {
+      console.log(`[${new Date().toISOString()}] Claim time reached. Attempting to claim VOID...`);
+
+      try {
+        // Attempt to claim
+        const claimTx = await contract.claimVoid({ gasLimit: 500000 });
+        console.log(`[${new Date().toISOString()}] Claim transaction sent: ${claimTx.hash}`);
+        const claimReceipt = await claimTx.wait();
+        console.log(`[${new Date().toISOString()}] Claim transaction confirmed. Gas used: ${claimReceipt.gasUsed.toString()}`);
+        
+        // After successful claim, check the new time left
+        timeLeft = await contract.timeLeft();
+        console.log(`[${new Date().toISOString()}] New time left until next claim: ${timeLeft.toString()} seconds`);
+      } catch (claimError) {
+        console.error(`[${new Date().toISOString()}] Error claiming VOID:`, claimError);
+        console.log(`[${new Date().toISOString()}] Error details:`, JSON.stringify(claimError, null, 2));
+        // If claim fails, we'll check again soon
+        timeLeft = BigNumber.from(60); // Check again in 1 minute
+      }
     }
 
     // Ensure timeLeft is a BigNumber
     timeLeft = BigNumber.from(timeLeft);
 
-    // Add 10 seconds buffer
-    const bufferTime = BigNumber.from(10);
-    timeLeft = timeLeft.add(bufferTime);
-
-    console.log(`[${new Date().toISOString()}] Time left until next claim: ${timeLeft.toString()} seconds (includes ${bufferTime.toString()} seconds buffer)`);
-
-    if (timeLeft.lte(BigNumber.from(0))) {
-      console.log(`[${new Date().toISOString()}] Claim time reached. Attempting to claim VOID...`);
-
-      try {
-        // Attempt to claim
-        const claimTx = await contract.claimVoid();
-        console.log(`[${new Date().toISOString()}] Claim transaction sent: ${claimTx.hash}`);
-        await claimTx.wait();
-        console.log(`[${new Date().toISOString()}] Claim transaction confirmed`);
-      } catch (claimError) {
-        console.error(`[${new Date().toISOString()}] Error claiming VOID:`, claimError.message);
-      }
-
-      // Check the new time left
-      try {
-        const newTx = await contract.timeLeftCheck();
-        await newTx.wait();
-        timeLeft = await contract.timeLeft();
-      } catch (error) {
-        console.warn(`[${new Date().toISOString()}] Error checking new time left after claim, using direct timeLeft:`, error.message);
-        timeLeft = await contract.timeLeft();
-      }
-      timeLeft = BigNumber.from(timeLeft).add(bufferTime);
-      console.log(`[${new Date().toISOString()}] New time left until next claim: ${timeLeft.toString()} seconds (includes ${bufferTime.toString()} seconds buffer)`);
-    }
-
     // Calculate wait time, ensuring it's at least 30 seconds and at most 24 hours
     const minWaitTime = BigNumber.from(30);
     const maxWaitTime = BigNumber.from(86400); // 24 hours in seconds
-    const waitTime = BigNumber.from(timeLeft).gt(maxWaitTime) ? maxWaitTime : BigNumber.from(timeLeft).lt(minWaitTime) ? minWaitTime : timeLeft;
+    const waitTime = timeLeft.gt(maxWaitTime) ? maxWaitTime : timeLeft.lt(minWaitTime) ? minWaitTime : timeLeft;
 
     console.log(`[${new Date().toISOString()}] Waiting ${waitTime.toString()} seconds before next check...`);
     const nextCheckTime = new Date(Date.now() + waitTime.toNumber() * 1000);
@@ -608,6 +600,7 @@ async function claimLoop() {
     claimLoop();
   } catch (error) {
     console.error(`[${new Date().toISOString()}] Error in claim loop:`, error);
+    console.log(`[${new Date().toISOString()}] Error details:`, JSON.stringify(error, null, 2));
     // If there's an error, wait for a minute and then retry
     const retryTime = 60000; // 1 minute
     console.log(`[${new Date().toISOString()}] Retrying in ${retryTime / 1000} seconds...`);
